@@ -1,0 +1,28 @@
+html {
+    height: 100%;
+    margin: 0px;
+    background: url(../image/fonehtml.jpg) no-repeat center center fixed;
+    background-size: cover;
+}
+body {
+
+    width: 100%;
+    margin: 0px;
+    height: 100%;
+}
+canvas {
+    display: block;
+    border: solid 1px black;
+    background-image: url(../image/fone.jpg);
+}
+#container{
+    clear: both;
+    display: inline-block;
+    position: relative;
+}
+#chat{
+    width: 200px;
+    bottom: 5px;
+    left: 5px;
+    position: absolute;
+}
