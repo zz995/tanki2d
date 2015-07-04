@@ -12,8 +12,8 @@ function Tank(x, y, r){
     this.x = x;
     this.y = y;
     this.r = r;
-    this.speed = 3;
-    this.rotate_speed = 2;
+    this.speed = 1;
+    this.rotate_speed = 1;
     this.border = {};
     this.border.body = new Intersect(Intersect.prototype.setPointsQuad.apply(this,
         [this.x,this.y,this.width/2-0.1,(this.height-this.gun_height)/2-0.1,this.r]));
