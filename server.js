@@ -6,7 +6,7 @@ var io = require('socket.io')(http);
 games = require('./js/sgame.js');
 games.io = io;
 
-http.listen(3005, function(){
+http.listen(process.env.PORT || 5000, function(){
     console.log('listening on *:3005');
 });
 
