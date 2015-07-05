@@ -26,3 +26,51 @@ canvas {
     left: 5px;
     position: absolute;
 }
+
+#enter{
+    background: url(../image/foneForEnter.png) no-repeat center center fixed;
+    background-size: cover;
+    width: 400px;
+    height: 220px;
+    border-radius: 4px;
+    position: absolute;
+}
+.login{
+    font-size: 15pt;
+    border: 1px solid #e1e1e1;
+    border-radius: 4px;
+    margin: 10px auto 0;
+    display: block;
+    width: 260px;
+    height: 25px;
+    padding: 3px;
+
+}
+.send{
+    border: 1px solid rgba(0,0,0,.04);
+    margin: 10px auto 0;
+    border-radius: 4px;
+    width: 260px;
+    height: 25px;
+    background: green;
+    text-align: center;
+
+}
+.textEnter {
+    font-size: 15pt;
+    margin: 2px auto 0;
+}
+.send:hover {
+    background: greenyellow;
+}
+.send:active {
+    background: darkolivegreen;
+}
+.head{
+    margin: 10px auto 0;
+    text-align: center;
+    font-size: 25pt;
+}
+.help{
+    text-align: center;
+}

@@ -12,7 +12,7 @@ function Tank(x, y, r){
     this.x = x;
     this.y = y;
     this.r = r;
-    this.speed = 1;
+    this.speed = 0.6;
     this.rotate_speed = 1;
     this.border = {};
     this.border.body = new Intersect(Intersect.prototype.setPointsQuad.apply(this,
@@ -24,11 +24,11 @@ function Tank(x, y, r){
         this.gun_height/2-0.1,this.r]
     ));
     this.whenWasShot = new Date();
-    this.timeShot = 500;
+    this.timeShot = 1000;
     this.yourDeath = 0;
     this.life = 100;
     this.destroyed = 0;
-    this.damage = 25;
+    this.damage = 20;
     this.sleep = false;
 }
 
@@ -75,11 +75,11 @@ Intersect.prototype.pointObjInter = function(pt2){
         c2=-t3.x*(t4.y-t3.y)+t3.y*(t4.x-t3.x);
         var d=a1*b2-b1*a2;
         var point={x:(-c1*b2+b1*c2)/d, y:(-a1*c2+c1*a2)/d};
-        console.log('was tohs x: '+point.x+' y: '+point.y);
+       // console.log('was tohs x: '+point.x+' y: '+point.y);
         if(Math.abs(nx-point.x)<Math.abs(nx-min.x)) min = point;
         else if(Math.abs(nx-point.x)==Math.abs(nx-min.x) && Math.abs(ny-point.y)<Math.abs(ny-min.y)) min=point;
     }
-    console.log('was minn x: '+min.x+' y: '+min.y);
+   // console.log('was minn x: '+min.x+' y: '+min.y);
     return min;
 };
 
@@ -119,13 +119,16 @@ function Game(){
     this.players = {};
     this.maxPlayer = 4;
     this.staticObj = stObj;
+    this.freeColor = [0, 1, 2, 3];
 }
 Game.prototype.intersect = function(id, ps){
 
 };
-function Player(id, t){
+function Player(id, t, n, c){
     this.playerId = id;
     this.tank = t;
+    this.name = n || 'underfined';
+    this.color = c || 0;
 }
 function rand(min, max){
     var rand = min - 0.5 + Math.random() * (max - min + 1);
@@ -133,53 +136,65 @@ function rand(min, max){
     return rand;
 }
 
-sgame.startGame = function(game, socket){
+sgame.startGame = function(game, socket, name){
     socket.join(game.roomId);
     this.id[socket.id] = game.roomId; //ассоциативнный массив ид_клиента - комната_клиента
-    socket.emit('massage', {str: 'You online', color: 'green'});
-    socket.emit('id', socket.id);
-    socket.broadcast.to(game.roomId).emit('massage', {str: 'User connected', color: 'green'});
+
 
     for(var tankCreat = new Tank(rand(0, 620)+ 50, rand(0, 380)+ 50, rand(0, 360));sgame.collision(tankCreat, game, socket.id);){
         tankCreat = new Tank(rand(0, 620)+ 50, rand(0, 380)+ 50, rand(0, 360));
     }
+    var color=0;
+    if (!game.freeColor.length)
+        color = 0;
+    else color = game.freeColor.pop();
 
-    game.players[socket.id] = new Player(socket.id, tankCreat);
-    //console.dir(game.players[socket.id]);
+    socket.emit('massage', {str: 'You online', color: color});
+    socket.emit('id', socket.id);
+    socket.broadcast.to(game.roomId).emit('massage', {str: 'User connected', color: color});
+
+
+    game.players[socket.id] = new Player(socket.id, tankCreat, name, color);
+   // console.log('name: '+game.players[socket.id].name+' color: '+game.players[socket.id].color);
     console.log('data about new player send');
+
+    socket.broadcast.to(game.roomId).emit('newPlayer',  game.players[socket.id]);
     for (var player in game.players){
-       if(!game.players.hasOwnProperty(player)) continue;
-       this.io.to(game.roomId).emit('newPlayer', game.players[player] /*game.players[socket.id]*/);
+        if(!game.players.hasOwnProperty(player)) continue;
+        socket.emit('newPlayer', game.players[player]);
     }
+
 };
-sgame.createGame = function(socket) {
+sgame.massage = function(socket, data){
+    var col = this.games[socket.rooms[1]].players[socket.id].color;
+   // console.log('massage: ' + data+' number: '+col);
+    this.io.to(socket.rooms[1]).emit('massage', {str: data, color: col});
+};
+sgame.createGame = function(socket, name) {
     var crGame = new Game();
     console.log('create game ');
-    //var pla = new Player(socket.id);
-   // crGame.players[socket.id] = new Player(socket.id);
-   // console.log('player id ' + crGame.players[socket.id].playerId);
     this.games[crGame.roomId] = crGame;
     this.count++;
-    this.startGame(crGame, socket);
+    this.startGame(crGame, socket, name);
 };
 sgame.endGame = function(socket){
     var theRoom = this.id[socket.id];
     var theGame = this.games[theRoom];
-    //console.dir(theGame);
     if(theGame.count == 1){
         this.count--;
         console.log('room delete ' + this.count);
         delete this.games[theRoom];
     } else {
+        var color = theGame.players[socket.id].color;
+        theGame.freeColor.push(color);
         delete theGame.players[socket.id];
         theGame.count--;
         console.log('player delete ' + theGame.count);
-        socket.broadcast.to(theRoom).emit('massage', {str: 'user disconnected', color: 'red'});
+        socket.broadcast.to(theRoom).emit('massage', {str: 'User disconnected', color: color});
         this.io.to(theRoom).emit('deletePlayer', socket.id);
-        //sgame.sendAllInGame(theGame, 'deletePlayer', socket.id);
     }
 };
-sgame.findGame = function(socket){
+sgame.findGame = function(socket, name){
     console.log('run findGame');
     if(this.count){
         var resultFind = false;
@@ -189,22 +204,20 @@ sgame.findGame = function(socket){
             if (gameIns.count < gameIns.maxPlayer){
                 var resultFind = true;
                 gameIns.count++;
-                gameIns.players[socket.id] = new Player(socket.id);
-                console.log('player id ' + gameIns.players[socket.id].playerId);
-                this.startGame(gameIns, socket);
+               // console.log('player id ');
+                this.startGame(gameIns, socket, name);
                 break;
             }
         }
         if(!resultFind){
-            this.createGame(socket);
+            this.createGame(socket, name);
         }
     } else {
-        this.createGame(socket);
+        this.createGame(socket, name);
     }
 };
 
 sgame.collision = function(theTank, theGame, socket){
-    //console.log('colision');
     var colBody = new Intersect();
     colBody.setPointsQuad(
         theTank.x,theTank.y,theTank.width/2-0.1,(theTank.height-theTank.gun_height)/2-0.1,theTank.r
@@ -217,7 +230,6 @@ sgame.collision = function(theTank, theGame, socket){
         theTank.gub_width/2-0.1,
         theTank.gun_height/2-0.1,theTank.r
     );
-    //console.log(theGame.count.toString());
     //провверка на столкновеня с статическими объектами
     var obj = theGame.staticObj;
     for(var i=0; i<obj.length; i++){
@@ -250,21 +262,21 @@ sgame.collision = function(theTank, theGame, socket){
 sgame.shot = function(theTank, theGame, socket){
     var px = theTank.x+((theTank.height-theTank.gun_height)/2)*Math.cos(theTank.r)+(theTank.gun_height)*Math.cos(theTank.r);
     var py = theTank.y+((theTank.height-theTank.gun_height)/2)*Math.sin(theTank.r)+(theTank.gun_height)*Math.sin(theTank.r);
-    console.log('was shot x: '+px+' y: '+py);
+   // console.log('was shot x: '+px+' y: '+py);
     var startShot = new Intersect([
         {x:px,
          y:py
         },
-        {x:px+720*Math.cos(theTank.r),
-         y:py+480*Math.sin(theTank.r)
+        {
+            x:px+(px-theTank.x)*75,
+            y:py+(py-theTank.y)*75
         }
     ]);
     var min = {x: 5000, y: 5000};
     var obj = theGame.staticObj;
     for(var i=0; i<obj.length; i++){
         var point = startShot.pointObjInter(obj[i]);
-        //console.log('was tohs x: '+point.x+' y: '+point.y);
-        console.log('minn minn x: '+min.x+' y: '+min.y);
+       // console.log('minn minn x: '+min.x+' y: '+min.y);
         if(Math.abs(px-point.x)<Math.abs(px-min.x)) min = point;
         else if(Math.abs(px-point.x)==Math.abs(px-min.x) && Math.abs(py-point.y)<Math.abs(py-min.y)) min=point;
     }
@@ -284,17 +296,19 @@ sgame.shot = function(theTank, theGame, socket){
         }
     }
     var kill = false;
+    var destroyed_1, death_1;
     if (victimId !== false){
         var pl = theGame.players[victimId].tank;
         var hp = pl.life-=theTank.damage;
         if(hp<=0){
             theTank.destroyed++;
             pl.yourDeath++;
+            destroyed_1 = theTank.destroyed;
+            death_1 = pl.yourDeath;
             pl.life=100;
             pl.sleep = true;
-            //theGame.players[i].tank.
             this.io.to(theGame.roomId).emit('heKill', {id:victimId, x:pl.x, y:pl.y});
-            this.io.to(theGame.roomId).emit('massage', {str: 'user kill', color: 'black'});
+            this.io.to(theGame.roomId).emit('massage', {str: 'User killed', color: theGame.players[socket].color});
             setTimeout(function(victimId) {
                 var p1 = theGame.players[victimId].tank;
                 pl.sleep = false;
@@ -307,15 +321,14 @@ sgame.shot = function(theTank, theGame, socket){
                 this.io.to(theGame.roomId).emit('endSleep', {id: victimId, x: p1.x, y: p1.y, r: p1.r});
             }.bind(this, victimId), 3000);
             kill=true;
-
-           // pl.x = 1000;
-          //  pl.y = 1000;
         }
 
     }
-    if(min.x!=5000 && min.y!=5000 && !kill)
-        this.io.to(theGame.roomId).emit('shot', {id:socket,  x: min.x, y:min.y, lifeVictim:{id:victimId, hp:victimId===false?false:theGame.players[victimId].tank.life}});
-    else console.log('mimo');
+    if(kill){
+        this.io.to(theGame.roomId).emit('kill', {destId:socket, dest: destroyed_1, deathId:victimId, death:death_1});
+    }
+
+    this.io.to(theGame.roomId).emit('shot', {hit:min.x!=5000 && min.y!=5000 && !kill, id:socket,  x: min.x, y:min.y, lifeVictim:{id:victimId, hp:victimId===false?false:theGame.players[victimId].tank.life}});
 };
 
 sgame.movePlayer = function(socket, keys){

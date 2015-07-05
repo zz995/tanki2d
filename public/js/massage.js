@@ -4,7 +4,7 @@ function Massage(marginTop, marginLeft, maxWidth, lineHeight, count, color){
     this.glabalColorMessage = [];
     this.textToSend = false;
     this.count = count || 5;
-    this.lineHeight = lineHeight || 12;
+    this.lineHeight = lineHeight || 15;
     this.maxWidth = maxWidth || 200;
     this.marginLeft = marginLeft || 5;
     this.marginTop = marginTop || 450;
@@ -76,8 +76,15 @@ Massage.prototype.drawMessage = function(context) {
 
     for(var i=this.count-1; i+1; i--){
         if(this.glabalMessage[i]!==undefined) {
+
+
+            context.shadowColor = "#000000";
+            context.shadowOffsetX = 1;
+            context.shadowOffsetY = 1;
+            context.shadowBlur = 1;
             context.fillStyle = this.glabalColorMessage[i];
             context.fillText(this.glabalMessage[i], this.marginLeft, this.marginTop - this.lineHeight * (this.count - i-1));
+
         }
     }
     context.restore();

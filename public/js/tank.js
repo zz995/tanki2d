@@ -1,4 +1,4 @@
-function TankObj(data){
+function TankObj(data, color){
     this.dead = false;
     this.width = data.width;
     this.height = data.height;
@@ -15,6 +15,11 @@ function TankObj(data){
     this.rotate_speed = data.rotate_speed;
     this.sleep = false;
     this.sleepClear = false;
+    this.color = color;
+    this.energy = 10;
+    this.timeShot = data.timeShot;
+    this.wasTimeShot = 0;
+    this.wasShot = false;
 }
 TankObj.prototype.clear = function (ctx){
     if(!(this.sleep&&this.sleepClear)) {
@@ -40,44 +45,21 @@ TankObj.prototype.clear = function (ctx){
 TankObj.prototype.redraw = function(ctx/*x, r*/) { // х на скльок сдвинуть танк, r уголо поворота танка
     ctx.save();
     ctx.translate(this.x, this.y);
-    //ctx.save();
-    //ctx.rotate(this.r);
-    //ctx.clearRect(-(this.height - this.gun_height) / 2 - this.margin,
-     //   -this.width / 2 - this.margin,
-     //   this.height - this.gun_height + 2*this.margin,
-     //   this.width + 2*this.margin);
-    //ctx.clearRect((this.height - this.gun_height)/2,
-    //    -this.gub_width / 2 - this.margin,
-   //     this.gun_height+2*this.margin,
-    //    this.gub_width+2*this.margin);
-    //ctx.restore();
-    //if(arguments.length>1)
-       // this.r += r * Math.PI / 180;
     if(!this.dead && !this.sleep) {
         ctx.rotate(this.r);
         ctx.drawImage(tank, -(this.height - this.gun_height) / 2 /*+ x*/, -this.width / 2);
+        ctx.fillStyle = this.color;
+        if(this.wasShot){
+            var d = (new Date())-this.wasTimeShot;
+            var x = ((this.energy/2)/this.timeShot)*d; //-this.width/2 +this.energy/2
+            if(d<this.timeShot)
+                ctx.fillRect(-(this.height - this.gun_height) / 2+5, -x, 5, 2*x);
+            else this.wasShot=false;
+        }else
+            ctx.fillRect(-(this.height - this.gun_height) / 2+5, -this.width / 2+this.energy/2, 5, this.energy);
     }
     ctx.restore();
-   // if(arguments.length) {
-        //this.x += x * Math.cos(this.r);
-        //this.y += x * Math.sin(this.r);
-    //}
-    //this.plus_x = 0;
-    //this.plus_rotate =0;
 };
-/*
-TankObj.prototype.update = function(k){
-    if(k.up)
-        this.plus_x = this.speed;
-    else if (k.down)
-        this.plus_x = -this.speed;
-    if(k.left)
-        this.plus_rotate = -this.rotate_speed;
-    else if (k.right)
-        this.plus_rotate = this.rotate_speed;
-};*/
-
-
 function Btoom(){
     this.visible = false; //adb
     this.timeStartBtoom = new Date(); //dd
@@ -85,6 +67,7 @@ function Btoom(){
     this.height = 0;
     this.x = 0;
     this.y = 0;
+    this.global = false;
 }
 Btoom.prototype.btoom = function(ctx, im){
     if(this.visible) {
@@ -103,6 +86,7 @@ Btoom.prototype.btoom = function(ctx, im){
             ctx.clearRect(-this.width / 2 - 10, -this.height / 2 - 10, this.width + 20, this.height + 20);
             ctx.restore();
             this.visible = false;
+            this.global = false;
         }
     }
 };

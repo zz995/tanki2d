@@ -1,5 +1,5 @@
 {
-  "name": "tanki_game_2d",
+  "name": "tanki995",
   "version": "0.0.1",
   "description": "",
   "main": "server.js",
@@ -13,6 +13,6 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server.js"
   },
-  "author": "",
+  "author": "zz995",
   "license": "ISC"
 }
