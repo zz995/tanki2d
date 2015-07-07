@@ -360,7 +360,7 @@ sgame.movePlayer = function(socket, keys){
         theTank.whenWasShot = new Date();
         sgame.shot(theTank, theGame, socket.id);
     }
-    if(!theTank.deltaTime) return;
+    //if(!theTank.deltaTime) return;
     var rotSp = theTank.rotate_speed/theTank.deltaTime;
     var sp = theTank.speed/theTank.deltaTime;
     if(keys.left)
