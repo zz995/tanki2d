@@ -20,6 +20,17 @@ function TankObj(data, color){
     this.timeShot = data.timeShot;
     this.wasTimeShot = 0;
     this.wasShot = false;
+
+    this.timeUpdatePos = 0;
+
+    this.endX = data.x;
+    this.endY = data.y;
+    this.endR = data.r;
+
+    this.t = 0;
+    this.startTime = 0;
+
+    this.dt = 0;
 }
 TankObj.prototype.clear = function (ctx){
     if(!(this.sleep&&this.sleepClear)) {
@@ -60,6 +71,37 @@ TankObj.prototype.redraw = function(ctx/*x, r*/) { // х на скльок сдвинуть танк,
     }
     ctx.restore();
 };
+function Shot(){
+    this.visible = false;
+    this.x = 0;
+    this.y = 0;
+    this.r = 0;
+    this.timeStartShot=0;
+    this.needClear = false;
+}
+Shot.prototype.shot = function(ctx, im){
+    if(this.visible) {
+        //console.log('shot draw');
+        this.visible = false;
+        ctx.save();
+        ctx.translate(this.x, this.y);//
+        ctx.rotate(this.r);
+        ctx.drawImage(im, 0, -(im.height/2));
+        ctx.restore();
+        setTimeout(function(){this.needClear=true;}.bind(this), 70);
+    }
+};
+Shot.prototype.clear = function(ctx, im){
+    if(this.needClear){
+        this.needClear = false;
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.r);
+        ctx.clearRect(0, -(im.height/2), im.width, im.height);
+        ctx.restore();
+    }
+};
+
 function Btoom(){
     this.visible = false; //adb
     this.timeStartBtoom = new Date(); //dd

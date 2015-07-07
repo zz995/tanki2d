@@ -21,15 +21,12 @@ app.get('/', function(req, res){
 io.on('connection', onSocketConnection);
 
 function onSocketConnection(socket) {
-    console.log('\n a user connected');
-
+    //console.log('\n a user connected');
     socket.on('newPlayer', onNewPlayer);
-
-
 }
 
 function onEndSleep(){
-    console.log('EndSleep');
+    //console.log('EndSleep');
 }
 
 function onMovePlayer(keys){
@@ -38,15 +35,17 @@ function onMovePlayer(keys){
 
 function onNewPlayer(name){
     var soc = this;
-    console.log('a new user '+soc.id+ ' name: '+name);
+    //console.log('a new user '+soc.id+ ' name: '+name);
 
     if(/^[a-zA-Z0-9]{3,10}$/.test(name)&&name!==undefined) {
-        console.log('user created '+soc.id);
+        //console.log('user created '+soc.id);
         io.to(soc.id).emit('loginTrue');
 
         games.findGame(soc, name);
 
         soc.on('movePlayer', onMovePlayer);
+
+        soc.on('checkPin', onCheckPin);
 
         soc.on('massage', onMassage);
 
@@ -55,13 +54,15 @@ function onNewPlayer(name){
         soc.on('endSleep', onEndSleep);
     }
 }
+function onCheckPin(){
+    games.checkPin(this);
+}
 
 function onMassage(msg){
     games.massage(this, msg);
 }
 
 function onClientDisconnect(){
-    console.log('user disconnected');
-    //console.dir(this.adapter.rooms);
+    //console.log('user disconnected');
     games.endGame(this);
 }

@@ -12,8 +12,8 @@ function Tank(x, y, r){
     this.x = x;
     this.y = y;
     this.r = r;
-    this.speed = 0.6;
-    this.rotate_speed = 1;
+    this.speed = 25;
+    this.rotate_speed = 20;
     this.border = {};
     this.border.body = new Intersect(Intersect.prototype.setPointsQuad.apply(this,
         [this.x,this.y,this.width/2-0.1,(this.height-this.gun_height)/2-0.1,this.r]));
@@ -30,6 +30,9 @@ function Tank(x, y, r){
     this.destroyed = 0;
     this.damage = 20;
     this.sleep = false;
+
+    this.lostTime = 0;
+    this.deltaTime = 0;
 }
 
 function Intersect(pt){ //pt масив который содержит точки
@@ -75,11 +78,11 @@ Intersect.prototype.pointObjInter = function(pt2){
         c2=-t3.x*(t4.y-t3.y)+t3.y*(t4.x-t3.x);
         var d=a1*b2-b1*a2;
         var point={x:(-c1*b2+b1*c2)/d, y:(-a1*c2+c1*a2)/d};
-       // console.log('was tohs x: '+point.x+' y: '+point.y);
+        //console.log('was tohs x: '+point.x+' y: '+point.y);
         if(Math.abs(nx-point.x)<Math.abs(nx-min.x)) min = point;
         else if(Math.abs(nx-point.x)==Math.abs(nx-min.x) && Math.abs(ny-point.y)<Math.abs(ny-min.y)) min=point;
     }
-   // console.log('was minn x: '+min.x+' y: '+min.y);
+    //console.log('was minn x: '+min.x+' y: '+min.y);
     return min;
 };
 
@@ -115,6 +118,7 @@ Intersect.prototype.intersectSeg = function(t1, t2, t3, t4) { //пересекаються ли
 
 function Game(){
     this.roomId = UUID();
+    this.timerId = 0;
     this.count = 1;
     this.players = {};
     this.maxPlayer = 4;
@@ -153,11 +157,9 @@ sgame.startGame = function(game, socket, name){
     socket.emit('id', socket.id);
     socket.broadcast.to(game.roomId).emit('massage', {str: 'User connected', color: color});
 
-
     game.players[socket.id] = new Player(socket.id, tankCreat, name, color);
-   // console.log('name: '+game.players[socket.id].name+' color: '+game.players[socket.id].color);
-    console.log('data about new player send');
-
+    //console.log('name: '+game.players[socket.id].name+' color: '+game.players[socket.id].color);
+    //console.log('data about new player send');
     socket.broadcast.to(game.roomId).emit('newPlayer',  game.players[socket.id]);
     for (var player in game.players){
         if(!game.players.hasOwnProperty(player)) continue;
@@ -167,35 +169,47 @@ sgame.startGame = function(game, socket, name){
 };
 sgame.massage = function(socket, data){
     var col = this.games[socket.rooms[1]].players[socket.id].color;
-   // console.log('massage: ' + data+' number: '+col);
+    //console.log('massage: ' + data+' number: '+col);
     this.io.to(socket.rooms[1]).emit('massage', {str: data, color: col});
 };
 sgame.createGame = function(socket, name) {
     var crGame = new Game();
-    console.log('create game ');
+    //console.log('create game ');
     this.games[crGame.roomId] = crGame;
     this.count++;
     this.startGame(crGame, socket, name);
+    crGame.timerId = setInterval(function(theGame) {
+        for(var i in theGame.players) {
+            if (!theGame.players.hasOwnProperty(i)) continue;
+            var theTank = theGame.players[i].tank;
+            this.io.to(theGame.roomId).emit('movePlayer', {id: i, x: theTank.x, y:theTank.y, r: theTank.r, dt: this.deltaTime});
+        }
+    }.bind(this, crGame), 50);
+    //console.log('interval start');
+
 };
 sgame.endGame = function(socket){
     var theRoom = this.id[socket.id];
     var theGame = this.games[theRoom];
     if(theGame.count == 1){
         this.count--;
-        console.log('room delete ' + this.count);
+        //console.log('room delete ' + this.count);
+        var iid =this.games[theRoom].timerId;
+        clearInterval(this.games[theRoom].timerId);
+        //console.log('interval stop: '+i);
         delete this.games[theRoom];
     } else {
         var color = theGame.players[socket.id].color;
         theGame.freeColor.push(color);
         delete theGame.players[socket.id];
         theGame.count--;
-        console.log('player delete ' + theGame.count);
+        //console.log('player delete ' + theGame.count);
         socket.broadcast.to(theRoom).emit('massage', {str: 'User disconnected', color: color});
         this.io.to(theRoom).emit('deletePlayer', socket.id);
     }
 };
 sgame.findGame = function(socket, name){
-    console.log('run findGame');
+    //console.log('run findGame');
     if(this.count){
         var resultFind = false;
         for(var i in this.games){
@@ -204,7 +218,7 @@ sgame.findGame = function(socket, name){
             if (gameIns.count < gameIns.maxPlayer){
                 var resultFind = true;
                 gameIns.count++;
-               // console.log('player id ');
+                //console.log('player id ');
                 this.startGame(gameIns, socket, name);
                 break;
             }
@@ -218,6 +232,7 @@ sgame.findGame = function(socket, name){
 };
 
 sgame.collision = function(theTank, theGame, socket){
+    //console.log('colision');
     var colBody = new Intersect();
     colBody.setPointsQuad(
         theTank.x,theTank.y,theTank.width/2-0.1,(theTank.height-theTank.gun_height)/2-0.1,theTank.r
@@ -230,6 +245,7 @@ sgame.collision = function(theTank, theGame, socket){
         theTank.gub_width/2-0.1,
         theTank.gun_height/2-0.1,theTank.r
     );
+    //console.log(theGame.count.toString());
     //провверка на столкновеня с статическими объектами
     var obj = theGame.staticObj;
     for(var i=0; i<obj.length; i++){
@@ -262,7 +278,7 @@ sgame.collision = function(theTank, theGame, socket){
 sgame.shot = function(theTank, theGame, socket){
     var px = theTank.x+((theTank.height-theTank.gun_height)/2)*Math.cos(theTank.r)+(theTank.gun_height)*Math.cos(theTank.r);
     var py = theTank.y+((theTank.height-theTank.gun_height)/2)*Math.sin(theTank.r)+(theTank.gun_height)*Math.sin(theTank.r);
-   // console.log('was shot x: '+px+' y: '+py);
+    //console.log('was shot x: '+px+' y: '+py);
     var startShot = new Intersect([
         {x:px,
          y:py
@@ -276,7 +292,8 @@ sgame.shot = function(theTank, theGame, socket){
     var obj = theGame.staticObj;
     for(var i=0; i<obj.length; i++){
         var point = startShot.pointObjInter(obj[i]);
-       // console.log('minn minn x: '+min.x+' y: '+min.y);
+        //console.log('was tohs x: '+point.x+' y: '+point.y);
+        //console.log('minn minn x: '+min.x+' y: '+min.y);
         if(Math.abs(px-point.x)<Math.abs(px-min.x)) min = point;
         else if(Math.abs(px-point.x)==Math.abs(px-min.x) && Math.abs(py-point.y)<Math.abs(py-min.y)) min=point;
     }
@@ -297,6 +314,8 @@ sgame.shot = function(theTank, theGame, socket){
     }
     var kill = false;
     var destroyed_1, death_1;
+
+    var vicX=0, vicY=0;
     if (victimId !== false){
         var pl = theGame.players[victimId].tank;
         var hp = pl.life-=theTank.damage;
@@ -317,48 +336,53 @@ sgame.shot = function(theTank, theGame, socket){
                 }
                 pl.x= tankCreat.x; pl.y= tankCreat.y; pl.r= tankCreat.r;
                 p1.border.body= tankCreat.border.body;
-                p1.border.gub= tankCreat.border.gub;
+                p1.border.gun= tankCreat.border.gun;
                 this.io.to(theGame.roomId).emit('endSleep', {id: victimId, x: p1.x, y: p1.y, r: p1.r});
             }.bind(this, victimId), 3000);
             kill=true;
         }
+        vicX=pl.x;
+        vicY=pl.y;
 
     }
-    if(kill){
-        this.io.to(theGame.roomId).emit('kill', {destId:socket, dest: destroyed_1, deathId:victimId, death:death_1});
-    }
-
-    this.io.to(theGame.roomId).emit('shot', {hit:min.x!=5000 && min.y!=5000 && !kill, id:socket,  x: min.x, y:min.y, lifeVictim:{id:victimId, hp:victimId===false?false:theGame.players[victimId].tank.life}});
+    this.io.to(theGame.roomId).emit('shot', {kill:kill, dest: destroyed_1, death:death_1, hit:min.x!=5000 && min.y!=5000 && !kill, id:socket,  x: min.x, y:min.y, vicX:vicX, vicY:vicY, gunX:px, gunY:py, gunR:theTank.r, lifeVictim:{id:victimId, hp:victimId===false?false:theGame.players[victimId].tank.life}});
 };
 
 sgame.movePlayer = function(socket, keys){
     var theGame = this.games[this.id[socket.id]];
     var theTank = theGame.players[socket.id].tank;
+    var time = new Date().getTime();
+    theTank.deltaTime = time - theTank.lostTime;
+    theTank.lostTime = time;
     if(theTank.sleep) return;
     var x=theTank.x, y=theTank.y, r=theTank.r;
-    //console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-    //console.dir(theTank);
     if(keys.space && ((theTank.whenWasShot-(new Date()))<-theTank.timeShot)) {
         theTank.whenWasShot = new Date();
         sgame.shot(theTank, theGame, socket.id);
     }
+    if(!theTank.deltaTime) return;
+    var rotSp = theTank.rotate_speed/theTank.deltaTime;
+    var sp = theTank.speed/theTank.deltaTime;
     if(keys.left)
-        theTank.r -= theTank.rotate_speed * Math.PI / 180;
+        theTank.r -= rotSp * Math.PI / 180;
     else if (keys.right)
-        theTank.r += theTank.rotate_speed * Math.PI / 180;
+        theTank.r += rotSp * Math.PI / 180;
 
     if(keys.up) {
-        theTank.x += theTank.speed * Math.cos(theTank.r);
-        theTank.y += theTank.speed * Math.sin(theTank.r);
-        //console.log('keyup     ' + theTank.x + '     ' + theTank.y);
+        theTank.x += sp * Math.cos(theTank.r);
+        theTank.y += sp * Math.sin(theTank.r);
+        //console.log('delta time: '+theTank.deltaTime+' x:'+theTank.x);
     } else if (keys.down) {
-        theTank.x -= theTank.speed * Math.cos(theTank.r);
-        theTank.y -= theTank.speed * Math.sin(theTank.r);
+        theTank.x -= sp * Math.cos(theTank.r);
+        theTank.y -= sp * Math.sin(theTank.r);
     }
     if(sgame.collision(theTank, theGame, socket.id)){
         theTank.r = r;
         theTank.x = x;
         theTank.y = y;
     }
-    this.io.to(theGame.roomId).emit('movePlayer', {id: socket.id, x: theTank.x, y:theTank.y, r: theTank.r});
+};
+
+sgame.checkPin = function(socket){
+    socket.emit('checkPin');
 };

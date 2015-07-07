@@ -7,10 +7,21 @@ function Info(){
     this.h = 0;
     this.lineH = 19;
     this.title = 'Information';
-    this.listColor = ['#CDD402', 'green', 'red', '#FF3B00'];
+    this.listColor = ['#8470FF', '#CDD402', 'green', 'red'];
     this.data = [];
     this.dataForChange = {};
     this.needClear = false;
+    this.forPerInfFontSize = 15;
+    this.stPerWhith = 0;
+    this.imageHeight = 21;
+    this.imageWidth = 28;
+    this.color = 0;
+    this.oldPerWhith = 0;
+    this.timeSend = 0;
+    this.ping = 0;
+    this.fps = 0;
+    this.timeFPS = 0;
+    this.deltaTime = 0;
 }
 Info.prototype.add = function(id, namePlayer, dest, dead, numberColor){
     if(this.dataForChange[id]!=undefined)return;
@@ -22,10 +33,28 @@ Info.prototype.add = function(id, namePlayer, dest, dead, numberColor){
         color: numberColor
     });
     this.dataForChange[id]=this.data[this.data.length-1];
+    this.sort();
 };
 Info.prototype.change = function(idDest, dest, idDead, dead){
     this.dataForChange[idDest].destroyed = dest;
     this.dataForChange[idDead].death = dead;
+    this.sort();
+};
+Info.prototype.sort = function(){
+    for(var i= 0; i<this.data.length-1; i++)
+        for(var j= 0; j<this.data.length-i-1; j++)
+            if(this.data[j].destroyed < this.data[j+1].destroyed){
+                var k = this.data[j];
+                this.data[j] = this.data[j+1];
+                this.data[j+1] = k;
+            } else {
+                if((this.data[j].destroyed == this.data[j+1].destroyed)
+                    &&(this.data[j].death > this.data[j+1].death)){
+                    var k = this.data[j];
+                    this.data[j] = this.data[j+1];
+                    this.data[j+1] = k;
+                }
+            }
 };
 Info.prototype.del = function(id){
     this.dataForChange[id].exist=false;
@@ -97,4 +126,48 @@ Info.prototype.draw = function(ctx){
 
     }
     ctx.restore();
+};
+Info.prototype.setPersonalInfo = function(dest, ctx){
+    this.destroyed = dest.toString();
+    ctx.save();
+    ctx.font = 'bold '+this.forPerInfFontSize.toString()+'pt Calibri';
+    this.stPerWhith = ctx.measureText(dest).width;
+    //console.log('width text: '+this.stPerWhith);
+    ctx.restore();
+};
+
+Info.prototype.drawPersonaInfo = function(ctx, im){
+    this.oldPerWhith = this.stPerWhith;
+    ctx.save();
+    ctx.font = 'bold '+this.forPerInfFontSize.toString()+'pt Calibri';
+    ctx.shadowColor = "#000000";
+    ctx.shadowOffsetX = 1;
+    ctx.shadowOffsetY = 1;
+    ctx.shadowBlur = 1;
+    ctx.fillStyle = this.color;
+    ctx.fillText(this.destroyed, 720-5-this.stPerWhith, 480-5);
+    ctx.restore();
+    ctx.drawImage(im, 720-this.stPerWhith-this.imageWidth-10, 480-this.imageHeight);
+};
+
+Info.prototype.clearPersonaInfo = function(ctx) {
+    ctx.clearRect(720-this.oldPerWhith-this.imageWidth-10-1, 480-this.imageHeight-1, this.oldPerWhith+this.imageWidth+10+2, this.imageHeight+2);
+};
+
+Info.prototype.fpsANDping = function(ctx){
+    ctx.save();
+    ctx.font = 'bold 12pt Calibri';
+    ctx.shadowColor = "#000000";
+    ctx.shadowOffsetX = 1;
+    ctx.shadowOffsetY = 1;
+    ctx.shadowBlur = 1;
+    ctx.fillStyle = this.color;
+    ctx.fillText('ping: '+this.ping, 5, 15);
+    ctx.fillText('fps: '+this.fps, 5, 30);
+    ctx.restore();
+
+};
+
+Info.prototype.clearFP = function(ctx){
+    ctx.clearRect(0,0,100,46);
 };
