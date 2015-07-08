@@ -70,6 +70,19 @@ Keys.prototype.onKeyUp = function(e) {
                 that.enterPressOne = true;
                 $('#chat').fadeTo('normal', 0.75).focus();
             }
+        /*
+            if(visible){
+                visible = false;
+                if(!/^\s*$/.test($('#chat').val())) {
+                    wrapText(ctx, $('#chat').val());
+                    $('#chat').val('');
+                }
+                $('#chat').fadeTo('normal', 0).blur();
+
+            }else{
+                visible = true;
+                $('#chat').fadeTo('normal', 0.75).focus();
+            }*/
             break;
         case 16: // Shift
             that.shift = false;

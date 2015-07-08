@@ -12,8 +12,8 @@ function Tank(x, y, r){
     this.x = x;
     this.y = y;
     this.r = r;
-    this.speed = 7;
-    this.rotate_speed = 10;
+    this.speed = 25;
+    this.rotate_speed = 20;
     this.border = {};
     this.border.body = new Intersect(Intersect.prototype.setPointsQuad.apply(this,
         [this.x,this.y,this.width/2-0.1,(this.height-this.gun_height)/2-0.1,this.r]));
@@ -78,11 +78,11 @@ Intersect.prototype.pointObjInter = function(pt2){
         c2=-t3.x*(t4.y-t3.y)+t3.y*(t4.x-t3.x);
         var d=a1*b2-b1*a2;
         var point={x:(-c1*b2+b1*c2)/d, y:(-a1*c2+c1*a2)/d};
-        //console.log('was tohs x: '+point.x+' y: '+point.y);
+        console.log('was tohs x: '+point.x+' y: '+point.y);
         if(Math.abs(nx-point.x)<Math.abs(nx-min.x)) min = point;
         else if(Math.abs(nx-point.x)==Math.abs(nx-min.x) && Math.abs(ny-point.y)<Math.abs(ny-min.y)) min=point;
     }
-    //console.log('was minn x: '+min.x+' y: '+min.y);
+    console.log('was minn x: '+min.x+' y: '+min.y);
     return min;
 };
 
@@ -153,28 +153,44 @@ sgame.startGame = function(game, socket, name){
         color = 0;
     else color = game.freeColor.pop();
 
+
     socket.emit('massage', {str: 'You online', color: color});
     socket.emit('id', socket.id);
     socket.broadcast.to(game.roomId).emit('massage', {str: 'User connected', color: color});
 
+
     game.players[socket.id] = new Player(socket.id, tankCreat, name, color);
-    //console.log('name: '+game.players[socket.id].name+' color: '+game.players[socket.id].color);
-    //console.log('data about new player send');
+    console.log('name: '+game.players[socket.id].name+' color: '+game.players[socket.id].color);
+    //console.dir(game.players[socket.id]);
+    console.log('data about new player send');
+
+    //this.io.to(game.roomId).emit('newPlayer', {game:game.players[player], name:name, color:color} /*game.players[socket.id]*/);
+
+    //for (var player in game.players){
+    //    if(!game.players.hasOwnProperty(player)) continue;
+    //    this.io.to(game.roomId).emit('newPlayer', game.players[player] /*game.players[socket.id]*/);
+   // }
+
     socket.broadcast.to(game.roomId).emit('newPlayer',  game.players[socket.id]);
+   // socket.broadcast.to(game.roomId).emit('addDate',  {id:socket.id, name:name, color:color});
     for (var player in game.players){
         if(!game.players.hasOwnProperty(player)) continue;
+       // socket.emit('addDate', {id:player, name:game.players[player].name, color:game.players[player].color});
         socket.emit('newPlayer', game.players[player]);
     }
 
 };
 sgame.massage = function(socket, data){
     var col = this.games[socket.rooms[1]].players[socket.id].color;
-    //console.log('massage: ' + data+' number: '+col);
+    console.log('massage: ' + data+' number: '+col);
     this.io.to(socket.rooms[1]).emit('massage', {str: data, color: col});
 };
 sgame.createGame = function(socket, name) {
     var crGame = new Game();
-    //console.log('create game ');
+    console.log('create game ');
+    //var pla = new Player(socket.id);
+   // crGame.players[socket.id] = new Player(socket.id);
+   // console.log('player id ' + crGame.players[socket.id].playerId);
     this.games[crGame.roomId] = crGame;
     this.count++;
     this.startGame(crGame, socket, name);
@@ -185,31 +201,33 @@ sgame.createGame = function(socket, name) {
             this.io.to(theGame.roomId).emit('movePlayer', {id: i, x: theTank.x, y:theTank.y, r: theTank.r, dt: this.deltaTime});
         }
     }.bind(this, crGame), 50);
-    //console.log('interval start');
+    console.log('interval start');
 
 };
 sgame.endGame = function(socket){
     var theRoom = this.id[socket.id];
     var theGame = this.games[theRoom];
+    //console.dir(theGame);
     if(theGame.count == 1){
         this.count--;
-        //console.log('room delete ' + this.count);
+        console.log('room delete ' + this.count);
         var iid =this.games[theRoom].timerId;
         clearInterval(this.games[theRoom].timerId);
-        //console.log('interval stop: '+i);
+        console.log('interval stop: '+i);
         delete this.games[theRoom];
     } else {
         var color = theGame.players[socket.id].color;
         theGame.freeColor.push(color);
         delete theGame.players[socket.id];
         theGame.count--;
-        //console.log('player delete ' + theGame.count);
+        console.log('player delete ' + theGame.count);
         socket.broadcast.to(theRoom).emit('massage', {str: 'User disconnected', color: color});
         this.io.to(theRoom).emit('deletePlayer', socket.id);
+        //sgame.sendAllInGame(theGame, 'deletePlayer', socket.id);
     }
 };
 sgame.findGame = function(socket, name){
-    //console.log('run findGame');
+    console.log('run findGame');
     if(this.count){
         var resultFind = false;
         for(var i in this.games){
@@ -218,7 +236,8 @@ sgame.findGame = function(socket, name){
             if (gameIns.count < gameIns.maxPlayer){
                 var resultFind = true;
                 gameIns.count++;
-                //console.log('player id ');
+                //gameIns.players[socket.id] = new Player(socket.id);
+                console.log('player id '/* + gameIns.players[socket.id].playerId*/);
                 this.startGame(gameIns, socket, name);
                 break;
             }
@@ -278,11 +297,14 @@ sgame.collision = function(theTank, theGame, socket){
 sgame.shot = function(theTank, theGame, socket){
     var px = theTank.x+((theTank.height-theTank.gun_height)/2)*Math.cos(theTank.r)+(theTank.gun_height)*Math.cos(theTank.r);
     var py = theTank.y+((theTank.height-theTank.gun_height)/2)*Math.sin(theTank.r)+(theTank.gun_height)*Math.sin(theTank.r);
-    //console.log('was shot x: '+px+' y: '+py);
+    console.log('was shot x: '+px+' y: '+py);
     var startShot = new Intersect([
         {x:px,
          y:py
         },
+        //{x:px+720*Math.cos(theTank.r),
+       //  y:py+480*Math.sin(theTank.r)
+       // }
         {
             x:px+(px-theTank.x)*75,
             y:py+(py-theTank.y)*75
@@ -293,7 +315,7 @@ sgame.shot = function(theTank, theGame, socket){
     for(var i=0; i<obj.length; i++){
         var point = startShot.pointObjInter(obj[i]);
         //console.log('was tohs x: '+point.x+' y: '+point.y);
-        //console.log('minn minn x: '+min.x+' y: '+min.y);
+        console.log('minn minn x: '+min.x+' y: '+min.y);
         if(Math.abs(px-point.x)<Math.abs(px-min.x)) min = point;
         else if(Math.abs(px-point.x)==Math.abs(px-min.x) && Math.abs(py-point.y)<Math.abs(py-min.y)) min=point;
     }
@@ -326,6 +348,7 @@ sgame.shot = function(theTank, theGame, socket){
             death_1 = pl.yourDeath;
             pl.life=100;
             pl.sleep = true;
+            //theGame.players[i].tank.
             this.io.to(theGame.roomId).emit('heKill', {id:victimId, x:pl.x, y:pl.y});
             this.io.to(theGame.roomId).emit('massage', {str: 'User killed', color: theGame.players[socket].color});
             setTimeout(function(victimId) {
@@ -340,29 +363,46 @@ sgame.shot = function(theTank, theGame, socket){
                 this.io.to(theGame.roomId).emit('endSleep', {id: victimId, x: p1.x, y: p1.y, r: p1.r});
             }.bind(this, victimId), 3000);
             kill=true;
+
+           // pl.x = 1000;
+          //  pl.y = 1000;
         }
         vicX=pl.x;
         vicY=pl.y;
 
     }
+   // if(kill){
+   //     this.io.to(theGame.roomId).emit('kill', {destId:socket, dest: destroyed_1, deathId:victimId, death:death_1});
+   // }
+
     this.io.to(theGame.roomId).emit('shot', {kill:kill, dest: destroyed_1, death:death_1, hit:min.x!=5000 && min.y!=5000 && !kill, id:socket,  x: min.x, y:min.y, vicX:vicX, vicY:vicY, gunX:px, gunY:py, gunR:theTank.r, lifeVictim:{id:victimId, hp:victimId===false?false:theGame.players[victimId].tank.life}});
 };
 
 sgame.movePlayer = function(socket, keys){
+
     var theGame = this.games[this.id[socket.id]];
     var theTank = theGame.players[socket.id].tank;
+/*
     var time = new Date().getTime();
+    console.log('\ndelta time: ', theTank.deltaTime);
+    console.log('time: ', time);
+    console.log('lost time: ', theTank.lostTime);
     theTank.deltaTime = time - theTank.lostTime;
     theTank.lostTime = time;
+*/
+   // theTank.deltaTime=0;
+
     if(theTank.sleep) return;
     var x=theTank.x, y=theTank.y, r=theTank.r;
+    //console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+    //console.dir(theTank);
     if(keys.space && ((theTank.whenWasShot-(new Date()))<-theTank.timeShot)) {
         theTank.whenWasShot = new Date();
         sgame.shot(theTank, theGame, socket.id);
     }
-    //if(!theTank.deltaTime) return;
-    var rotSp = theTank.rotate_speed/theTank.deltaTime;
-    var sp = theTank.speed/theTank.deltaTime;
+    //if(theTank.deltaTime) return;
+    var rotSp = theTank.rotate_speed/keys.delTime;        //theTank.deltaTime;
+    var sp = theTank.speed/keys.delTime;
     if(keys.left)
         theTank.r -= rotSp * Math.PI / 180;
     else if (keys.right)
@@ -372,6 +412,7 @@ sgame.movePlayer = function(socket, keys){
         theTank.x += sp * Math.cos(theTank.r);
         theTank.y += sp * Math.sin(theTank.r);
         //console.log('delta time: '+theTank.deltaTime+' x:'+theTank.x);
+        //console.log('keyup     ' + theTank.x + '     ' + theTank.y);
     } else if (keys.down) {
         theTank.x -= sp * Math.cos(theTank.r);
         theTank.y -= sp * Math.sin(theTank.r);
@@ -381,6 +422,7 @@ sgame.movePlayer = function(socket, keys){
         theTank.x = x;
         theTank.y = y;
     }
+    //this.io.to(theGame.roomId).emit('movePlayer', {id: socket.id, x: theTank.x, y:theTank.y, r: theTank.r});
 };
 
 sgame.checkPin = function(socket){

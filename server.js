@@ -21,12 +21,15 @@ app.get('/', function(req, res){
 io.on('connection', onSocketConnection);
 
 function onSocketConnection(socket) {
-    //console.log('\n a user connected');
+    console.log('\n a user connected');
+
     socket.on('newPlayer', onNewPlayer);
+
+
 }
 
 function onEndSleep(){
-    //console.log('EndSleep');
+    console.log('EndSleep');
 }
 
 function onMovePlayer(keys){
@@ -34,11 +37,12 @@ function onMovePlayer(keys){
 }
 
 function onNewPlayer(name){
+    //socket = this;
     var soc = this;
-    //console.log('a new user '+soc.id+ ' name: '+name);
+    console.log('a new user '+soc.id+ ' name: '+name);
 
     if(/^[a-zA-Z0-9]{3,10}$/.test(name)&&name!==undefined) {
-        //console.log('user created '+soc.id);
+        console.log('user created '+soc.id);
         io.to(soc.id).emit('loginTrue');
 
         games.findGame(soc, name);
@@ -53,16 +57,26 @@ function onNewPlayer(name){
 
         soc.on('endSleep', onEndSleep);
     }
+
+
+    //io.to(socket.rooms[1]).emit('massage', {str: 'qwerty', color: 'black'});
+   // socket.broadcast.emit('massage', {str: 'qwerty', color: 'black'});
+    //socket.broadcast.emit('massage', {str: 'User connected', color: 'green'});
+   // socket.emit('massage', {str: 'You online', color: 'green'});
 }
 function onCheckPin(){
     games.checkPin(this);
 }
 
 function onMassage(msg){
+    //console.log('massage: ' + msg);
+    //io.emit('massage', {str: msg, color: 'blue'});
+    //io.to(this.rooms[1]).emit('massage', {str: msg, color: 'blue'});
     games.massage(this, msg);
 }
 
 function onClientDisconnect(){
-    //console.log('user disconnected');
+    console.log('user disconnected');
+    //console.dir(this.adapter.rooms);
     games.endGame(this);
 }

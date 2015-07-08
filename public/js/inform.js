@@ -132,7 +132,7 @@ Info.prototype.setPersonalInfo = function(dest, ctx){
     ctx.save();
     ctx.font = 'bold '+this.forPerInfFontSize.toString()+'pt Calibri';
     this.stPerWhith = ctx.measureText(dest).width;
-    //console.log('width text: '+this.stPerWhith);
+    console.log('width text: '+this.stPerWhith);
     ctx.restore();
 };
 
