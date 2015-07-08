@@ -1,6 +1,6 @@
 function Massage(marginTop, marginLeft, maxWidth, lineHeight, count, color){
     this.visible = false;
-    this.glabalMessage = [];//{text: [], col: 'blue'};
+    this.glabalMessage = [];
     this.glabalColorMessage = [];
     this.textToSend = false;
     this.count = count || 5;

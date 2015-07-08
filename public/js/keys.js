@@ -12,7 +12,6 @@ Keys.prototype.onKeyDown = function(e) {
     var that = this,
         c = e.keyCode;
     switch (c) {
-        // Controls
         case 65:
         case 37: // Left
             that.left = !that.enterPressOne;
@@ -70,19 +69,6 @@ Keys.prototype.onKeyUp = function(e) {
                 that.enterPressOne = true;
                 $('#chat').fadeTo('normal', 0.75).focus();
             }
-        /*
-            if(visible){
-                visible = false;
-                if(!/^\s*$/.test($('#chat').val())) {
-                    wrapText(ctx, $('#chat').val());
-                    $('#chat').val('');
-                }
-                $('#chat').fadeTo('normal', 0).blur();
-
-            }else{
-                visible = true;
-                $('#chat').fadeTo('normal', 0.75).focus();
-            }*/
             break;
         case 16: // Shift
             that.shift = false;

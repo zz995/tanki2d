@@ -132,7 +132,7 @@ Info.prototype.setPersonalInfo = function(dest, ctx){
     ctx.save();
     ctx.font = 'bold '+this.forPerInfFontSize.toString()+'pt Calibri';
     this.stPerWhith = ctx.measureText(dest).width;
-    console.log('width text: '+this.stPerWhith);
+    //console.log('width text: '+this.stPerWhith);
     ctx.restore();
 };
 
@@ -165,7 +165,6 @@ Info.prototype.fpsANDping = function(ctx){
     ctx.fillText('ping: '+this.ping, 5, 15);
     ctx.fillText('fps: '+this.fps, 5, 30);
     ctx.restore();
-
 };
 
 Info.prototype.clearFP = function(ctx){
