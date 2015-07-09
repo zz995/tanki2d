@@ -7,7 +7,7 @@ function Info(){
     this.h = 0;
     this.lineH = 19;
     this.title = 'Information';
-    this.listColor = ['#8470FF', '#CDD402', 'green', 'red'];
+    this.listColor = ['#4968CB', '#CDD402', 'green', 'red'];
     this.data = [];
     this.dataForChange = {};
     this.needClear = false;
@@ -132,7 +132,6 @@ Info.prototype.setPersonalInfo = function(dest, ctx){
     ctx.save();
     ctx.font = 'bold '+this.forPerInfFontSize.toString()+'pt Calibri';
     this.stPerWhith = ctx.measureText(dest).width;
-    //console.log('width text: '+this.stPerWhith);
     ctx.restore();
 };
 

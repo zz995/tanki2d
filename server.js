@@ -7,7 +7,7 @@ games = require('./js/sgame.js');
 games.io = io;
 
 http.listen(process.env.PORT || 3005, function(){
-    //console.log('listening on *:3005');
+    console.log('listening on *:3005');
 });
 
 app.use(express.static(__dirname+'/public/'));  //необходимо что бы с документа можна было добраться до стилей и скриптов
@@ -32,7 +32,6 @@ function onMovePlayer(keys){
 function onNewPlayer(name){
     var soc = this;
     //console.log('a new user '+soc.id+ ' name: '+name);
-
     if(/^[a-zA-Z0-9]{3,10}$/.test(name)&&name!==undefined) {
         //console.log('user created '+soc.id);
         io.to(soc.id).emit('loginTrue');
@@ -41,7 +40,7 @@ function onNewPlayer(name){
 
         soc.on('movePlayer', onMovePlayer);
 
-        soc.on('checkPin', onCheckPin);
+        soc.on('checkPing', onCheckPing);
 
         soc.on('massage', onMassage);
 
@@ -49,8 +48,8 @@ function onNewPlayer(name){
     }
 }
 
-function onCheckPin(){
-    games.checkPin(this);
+function onCheckPing(){
+    games.checkPing(this);
 }
 
 function onMassage(msg){

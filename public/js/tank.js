@@ -48,7 +48,7 @@ TankObj.prototype.clear = function (ctx){
         ctx.restore();
     }
 };
-TankObj.prototype.redraw = function(ctx) {
+TankObj.prototype.redraw = function(ctx, tank) {
     ctx.save();
     ctx.translate(this.x, this.y);
     if(!this.dead && !this.sleep) {
@@ -101,8 +101,8 @@ Shot.prototype.clear = function(ctx, im){
 function Btoom(){
     this.visible = false; //adb
     this.timeStartBtoom = new Date(); //dd
-    this.width = 0;
-    this.height = 0;
+    this.width = 50;
+    this.height = 50;
     this.x = 0;
     this.y = 0;
     this.global = false;

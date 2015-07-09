@@ -12,8 +12,8 @@ function Tank(x, y, r){
     this.x = x;
     this.y = y;
     this.r = r;
-    this.speed = 10;
-    this.rotate_speed = 16;
+    this.speed = 20;
+    this.rotate_speed = 35;
     this.border = {}; //содержит точки дл€ описани€ корпуса и пушки танка
     this.border.body = new Intersect(Intersect.prototype.setPointsQuad.apply(this,
         [this.x,this.y,this.width/2-0.1,(this.height-this.gun_height)/2-0.1,this.r]));
@@ -266,7 +266,6 @@ sgame.collision = function(theTank, theGame, socket){
     }
     theTank.border.body = colBody;
     theTank.border.gun = colGun;
-
     return false;
 };
 sgame.shot = function(theTank, theGame, socket){
@@ -375,6 +374,6 @@ sgame.movePlayer = function(socket, data){
     }
 };
 
-sgame.checkPin = function(socket){
-    socket.emit('checkPin');
+sgame.checkPing = function(socket){
+    socket.emit('checkPing');
 };
