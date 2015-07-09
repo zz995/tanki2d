@@ -12,8 +12,8 @@ function Tank(x, y, r){
     this.x = x;
     this.y = y;
     this.r = r;
-    this.speed = 7;
-    this.rotate_speed = 12;
+    this.speed = 13;
+    this.rotate_speed = 17;
     this.border = {}; //содержит точки дл€ описани€ корпуса и пушки танка
     this.border.body = new Intersect(Intersect.prototype.setPointsQuad.apply(this,
         [this.x,this.y,this.width/2-0.1,(this.height-this.gun_height)/2-0.1,this.r]));
