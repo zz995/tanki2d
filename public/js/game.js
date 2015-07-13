@@ -118,7 +118,6 @@ function onShot(data){
         vzruv.timeStartBtoom = new Date();
         vzruv.global = true;
         if(data.lifeVictim.id==game.id)lifeLine.hp = 0;
-        //game.countTankClear++;
         players[data.lifeVictim.id].tank.sleep = true;
         message({str: 'User killed', color: info.dataForChange[data.id].color});
     }
@@ -133,13 +132,12 @@ function onShot(data){
 }
 
 function onDataForUser(data){
-
     for(var i in data) {
         if (!data.hasOwnProperty(i)||i=='msg'||i=='del'||i=='wake'||i=='date') continue;
         var theTank = players[i].tank;
         if(data.date > theTank.timeUpdate) theTank.timeUpdate = data.date;
         else {
-            console.log('data is old');
+            //console.log('data is old');
             continue;
         }
         var dataTank = data[i];
@@ -182,7 +180,7 @@ function onNewPlayer(data){
         };
         players[i].tank.timeUpdatePos = new Date().getTime();
         info.add(i, data.game[i].name, data.game[i].tank.destroyed, data.game[i].tank.yourDeath, data.game[i].color);
-        message({str: 'User connected', color: data.game[i].color});
+        if(data.id === undefined) message({str: 'User connected', color: data.game[i].color});
     }
     if(data.id != undefined) {
         game.id = data.id;
@@ -214,6 +212,7 @@ function message(msg){
 
 function animate(){
     if(game.startAnimate){
+        //for(var i=0; i<10000000; i++){var a = 10;}
         update();
         draw();
     }
@@ -226,15 +225,16 @@ function update(){
         up: keys.up, down: keys.down,
         left: keys.left, right: keys.right,
         gunLeft: keys.gunLeft, gunRight: keys.gunRight,
-        space: keys.space, delTime:info.deltaTime,
+        space: keys.space, delTime:1/info.deltaTime*1000,
         msg: checkEnterData?keys.data:false
     });
+    //console.log('delTime: '+info.deltaTime);
+
     if(checkEnterData) keys.data='';
 
     for(var i in players) {
         if (!players.hasOwnProperty(i)) continue;
         var theTank = players[i].tank;
-        //console.log('t: '+theTank.t);
         if(theTank.t<=1&&theTank.t>=0){
             theTank.x += (theTank.endX-theTank.x)*theTank.t;
             theTank.y += (theTank.endY-theTank.y)*theTank.t;

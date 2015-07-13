@@ -10,15 +10,15 @@ function Tank(x, y, r){
 
     this.gun_height =  31;
     this.gun_width = 12;
-    this.gun_speed = 20;
+    this.gun_speed = 60;
     this.gun_r = 0;
 
     this.gub_width = 3;
     this.x = x;
     this.y = y;
     this.r = r;
-    this.speed = 13;
-    this.rotate_speed = 17;
+    this.speed = 39;
+    this.rotate_speed = 51;
     this.border = {}; //�������� ����� ��� �������� ������� � ����� �����
     this.border.body = new Intersect(Intersect.prototype.setPointsQuad.apply(this,
         [this.x,this.y,this.width/2-0.1,this.height/2-0.1,this.r]));
@@ -42,6 +42,7 @@ function Tank(x, y, r){
 function Intersect(pt){ //pt ����� ������� �������� �����
     this.points = pt || [];
 }
+
 Intersect.prototype.setPointsQuad = function(centrX, centrY, h, w, r){
     var weightX = w*Math.cos(r),
         weightY = w*Math.sin(r),
@@ -95,6 +96,7 @@ Intersect.prototype.intersect = function(pt2){
                 return true;
     return false;
 };
+
 Intersect.prototype.intersectSeg = function(t1, t2, t3, t4) { //������������� �� ������� ������� �������
     intersect_1 = function(a, b, c, d){
         if (a>b){
@@ -138,17 +140,20 @@ function Game(){
         {x:182, y:356},
         {x:542, y:133}];
 }
+
 function Player(id, t, n, c){
     this.playerId = id;
     this.tank = t;
     this.name = n || 'underfined';
     this.color = c || 0;
 }
+
 function rand(min, max){
     var rand = min - 0.5 + Math.random() * (max - min + 1);
     rand = Math.round(rand);
     return rand;
 }
+
 sgame.startGame = function(game, socket, name){
     socket.join(game.roomId);
     this.id[socket.id] = game.roomId; //�������������� ������ ��_������� - �������_�������
@@ -161,7 +166,6 @@ sgame.startGame = function(game, socket, name){
     if (!game.freeColor.length)
         color = 0;
     else color = game.freeColor.pop();
-
     game.players[socket.id] = new Player(socket.id, tankCreat, name, color);
     //console.log('name: '+game.players[socket.id].name+' color: '+game.players[socket.id].color);
     //console.log('data about new player send');
@@ -238,6 +242,7 @@ sgame.findGame = function(socket, name){
         this.createGame(socket, name);
     }
 };
+
 sgame.collision = function(theTank, theGame, socket, put){
     var colBody = new Intersect();
     colBody.setPointsQuad(
@@ -279,6 +284,7 @@ sgame.collision = function(theTank, theGame, socket, put){
     theTank.border.gun = colGun;
     return false;
 };
+
 sgame.shot = function(theTank, theGame, socket){
     var px = theTank.x+((theTank.gun_height-5))*Math.cos(theTank.r+theTank.gun_r);
     var py = theTank.y+((theTank.gun_height-5))*Math.sin(theTank.r+theTank.gun_r);
@@ -347,8 +353,10 @@ sgame.shot = function(theTank, theGame, socket){
         vicX=pl.x;
         vicY=pl.y;
     }
+
     this.io.to(theGame.roomId).emit('shot', {kill:kill, dest: destroyed_1, death:death_1, hit:min.x!=5000 && min.y!=5000 && !kill, id:socket,  x: min.x, y:min.y, vicX:vicX, vicY:vicY, gunX:px, gunY:py, tankR:theTank.r, gunR:theTank.gun_r, lifeVictim:{id:victimId, hp:victimId===false?false:theGame.players[victimId].tank.life}});
 };
+
 sgame.processingDataUser = function(socket, data){
     var theGame = this.games[this.id[socket.id]];
     var theTank = theGame.players[socket.id].tank;
@@ -356,8 +364,10 @@ sgame.processingDataUser = function(socket, data){
         theGame.message.push({str: data.msg, color: theGame.players[socket.id].color});
         //console.log('message: '+data.msg);
     }
+
     if(theTank.sleep) return;
     var x=theTank.x, y=theTank.y, r=theTank.r, gr=theTank.gun_r;
+
     if(data.space && ((theTank.whenWasShot-(new Date()))<-theTank.timeShot)) {
         theTank.whenWasShot = new Date();
         sgame.shot(theTank, theGame, socket.id);
@@ -365,6 +375,7 @@ sgame.processingDataUser = function(socket, data){
     var rotSp = theTank.rotate_speed/data.delTime;
     var sp = theTank.speed/data.delTime;
     var gunRotSp = theTank.gun_speed/data.delTime;
+    //console.log('sp: '+sp);
     if(data.gunLeft)
         theTank.gun_r -= gunRotSp * Math.PI / 180;
     else if (data.gunRight)
@@ -387,6 +398,7 @@ sgame.processingDataUser = function(socket, data){
         theTank.gun_r = gr;
     }
 };
+
 sgame.checkPing = function(socket){
     socket.emit('checkPing');
 };

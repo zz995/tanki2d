@@ -3,13 +3,11 @@ function TankObj(data, color){
     this.width = data.width;
     this.height = data.height;
     this.margin = data.margin;
- 
     this.gun_height =  data.gun_height;
     this.gun_width = data.gun_width;
     this.gun_r = data.gun_r;
     this.oldr_gun = data.gun_r;
     this.endGun_r = data.gun_r;
-
     this.gub_width = data.gub_width;
     this.x = data.x;
     this.y = data.y;
@@ -57,6 +55,7 @@ TankObj.prototype.clear = function (ctx){
         ctx.restore();
     }
 };
+
 TankObj.prototype.redraw = function(ctx, tank, gun) {
     ctx.save();
     ctx.translate(this.x, this.y);
@@ -120,7 +119,6 @@ function Btoom(){
     this.y = 0;
     this.global = false;
 }
-
 Btoom.prototype.btoom = function(ctx, im){
     if(this.visible) {
         var d = -Math.round((this.timeStartBtoom - (new Date())) / 30);

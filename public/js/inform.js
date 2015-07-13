@@ -88,7 +88,6 @@ Info.prototype.draw = function(ctx){
     ctx.globalAlpha = 0.5;
     ctx.fillStyle = "#000000";
     ctx.fillRect(-this.w/2,-this.h/2, this.w, this.lineH);
-
     ctx.beginPath();
     ctx.globalAlpha = 0.3;
     ctx.lineWidth=2;
@@ -101,24 +100,19 @@ Info.prototype.draw = function(ctx){
     ctx.moveTo(-this.w/2, -this.h/2+2*this.lineH);
     ctx.lineTo(this.w/2, -this.h/2+2*this.lineH);
     ctx.stroke();
-
     for(var i= 0, l = this.data.length/2>>0; i/2<l; i+=2){
         ctx.fillRect(-this.w/2,-this.h/2+(3+i)*this.lineH, this.w, this.lineH);
     }
-
     ctx.globalAlpha = 0.2;
     ctx.fillStyle = "#000000";
     ctx.fillRect(-this.w/2,-this.h/2, this.w, 2*this.lineH);
-
     ctx.globalAlpha = 1;
     ctx.fillStyle = "#ffffff";
     ctx.fillText(this.title, -ctx.measureText(this.title).width/2, 15-this.h/2);
-
     ctx.fillText('N', -this.w/2+2,15-this.h/2+this.lineH);
     ctx.fillText('Name players', -this.w/2+5+20,15-this.h/2+this.lineH);
     ctx.fillText('Killed', -this.w/2+5+190,15-this.h/2+this.lineH);
     ctx.fillText('Death', -this.w/2+5+245,15-this.h/2+this.lineH);
-
     for(var i=1; i<=this.data.length;++i){
         ctx.shadowColor = "#000000";
         ctx.shadowOffsetX = 1;
@@ -129,7 +123,6 @@ Info.prototype.draw = function(ctx){
         ctx.fillText(this.data[i-1].name, -this.w/2+5+20, 15-this.h/2+this.lineH*(i+1));
         ctx.fillText(this.data[i-1].destroyed, -this.w/2+5+190, 15-this.h/2+this.lineH*(i+1));
         ctx.fillText(this.data[i-1].death, -this.w/2+5+245, 15-this.h/2+this.lineH*(i+1));
-
     }
     ctx.restore();
 };

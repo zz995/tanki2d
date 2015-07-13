@@ -57,7 +57,9 @@ Message.prototype.wrapText = function(context, text) {
     }
 
     if(savetext.length<this.count && testLine.length>0 && testLine!=' ') savetext.push(testLine);
+
     this.top -= this.lineHeight*(savetext.length-1);
+
     for(var n = savetext.length, i = 0; i<this.count-n;  i++) {
         this.glabalMessage[i] = this.glabalMessage[i+n];
         this.glabalColorMessage[i] = this.glabalColorMessage[i+n];
