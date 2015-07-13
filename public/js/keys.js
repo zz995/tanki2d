@@ -5,9 +5,12 @@ function Keys(){
     this.down = false;
     this.space = false;
     this.shift = false;
+    this.gunLeft = false;
+    this.gunRight = false;
     this.enterPressOne = false;
     this.data = '';
 }
+
 Keys.prototype.onKeyDown = function(e) {
     var that = this,
         c = e.keyCode;
@@ -34,8 +37,15 @@ Keys.prototype.onKeyDown = function(e) {
         case 16: // Shift
             that.shift = !that.enterPressOne;
             break;
+        case 188: //left
+            that.gunLeft = !that.enterPressOne;
+            break;
+        case 190: //right
+            that.gunRight = !that.enterPressOne;
+            break;
     };
 };
+
 Keys.prototype.onKeyUp = function(e) {
     var that = this,
         c = e.keyCode;
@@ -73,5 +83,12 @@ Keys.prototype.onKeyUp = function(e) {
         case 16: // Shift
             that.shift = false;
             break;
+        case 188: //left
+            that.gunLeft = false;
+            break;
+        case 190: //right
+            that.gunRight = false;
+            break;
+
     };
 };

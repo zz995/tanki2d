@@ -3,7 +3,13 @@ function TankObj(data, color){
     this.width = data.width;
     this.height = data.height;
     this.margin = data.margin;
-    this.gun_height = data.gun_height;
+ 
+    this.gun_height =  data.gun_height;
+    this.gun_width = data.gun_width;
+    this.gun_r = data.gun_r;
+    this.oldr_gun = data.gun_r;
+    this.endGun_r = data.gun_r;
+
     this.gub_width = data.gub_width;
     this.x = data.x;
     this.y = data.y;
@@ -26,7 +32,9 @@ function TankObj(data, color){
     this.endR = data.r;
     this.t = 0;
     this.startTime = 0;
+    this.timeUpdate = 0;
 }
+
 TankObj.prototype.clear = function (ctx){
     if(!(this.sleep&&this.sleepClear)) {
         if(this.sleep) this.sleepClear = true;
@@ -34,35 +42,38 @@ TankObj.prototype.clear = function (ctx){
         ctx.save();
         ctx.translate(this.oldx, this.oldy);
         ctx.rotate(this.oldr);
-        ctx.clearRect(-(this.height - this.gun_height) / 2 - this.margin,
+        ctx.clearRect(-this.height / 2 - this.margin,
             -this.width / 2 - this.margin,
-            this.height - this.gun_height + 2 * this.margin,
+            this.height + 2 * this.margin,
             this.width + 2 * this.margin);
-        ctx.clearRect((this.height - this.gun_height) / 2,
-            -this.gub_width / 2 - this.margin,
+        ctx.rotate(this.oldr_gun);
+        ctx.clearRect(-5, -this.gub_width / 2 - this.margin,
             this.gun_height + 2 * this.margin,
             this.gub_width + 2 * this.margin);
+        this.oldr_gun = this.gun_r;
         this.oldx = this.x;
         this.oldy = this.y;
         this.oldr = this.r;
         ctx.restore();
     }
 };
-TankObj.prototype.redraw = function(ctx, tank) {
+TankObj.prototype.redraw = function(ctx, tank, gun) {
     ctx.save();
     ctx.translate(this.x, this.y);
     if(!this.dead && !this.sleep) {
         ctx.rotate(this.r);
-        ctx.drawImage(tank, -(this.height - this.gun_height) / 2 /*+ x*/, -this.width / 2);
+        ctx.drawImage(tank, -this.height / 2 /*+ x*/, -this.width / 2);
         ctx.fillStyle = this.color;
         if(this.wasShot){
             var d = (new Date())-this.wasTimeShot;
             var x = ((this.energy/2)/this.timeShot)*d;
             if(d<this.timeShot)
-                ctx.fillRect(-(this.height - this.gun_height) / 2+5, -x, 5, 2*x);
+                ctx.fillRect(-this.height / 2+5, -x, 5, 2*x);
             else this.wasShot=false;
         }else
-            ctx.fillRect(-(this.height - this.gun_height) / 2+5, -this.width / 2+this.energy/2, 5, this.energy);
+            ctx.fillRect(-this.height / 2+5, -this.width / 2+this.energy/2, 5, this.energy);
+        ctx.rotate(this.gun_r);
+        ctx.drawImage(gun, -5, -this.gun_width/2);
     }
     ctx.restore();
 };
@@ -75,6 +86,7 @@ function Shot(){
     this.timeStartShot=0;
     this.needClear = false;
 }
+
 Shot.prototype.shot = function(ctx, im){
     if(this.visible) {
         //console.log('shot draw');
@@ -87,6 +99,7 @@ Shot.prototype.shot = function(ctx, im){
         setTimeout(function(){this.needClear=true;}.bind(this), 70);
     }
 };
+
 Shot.prototype.clear = function(ctx, im){
     if(this.needClear){
         this.needClear = false;
@@ -107,6 +120,7 @@ function Btoom(){
     this.y = 0;
     this.global = false;
 }
+
 Btoom.prototype.btoom = function(ctx, im){
     if(this.visible) {
         var d = -Math.round((this.timeStartBtoom - (new Date())) / 30);
@@ -136,6 +150,7 @@ function LineLife(){
     this.w = 70;
     this.h = 15;
 }
+
 LineLife.prototype.drawHp = function(){
     ctx.save();
     ctx.globalAlpha = 0.5;

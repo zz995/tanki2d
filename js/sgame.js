@@ -1,38 +1,45 @@
-var stObj = require(__dirname+'/staticObjects.js'); //модуль в котором храняться статические объекты
+var stObj = require(__dirname+'/staticObjects.js'); //пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 var sgame = module.exports = { games : {}, count: 0, id: {}, io: {},
-    pointsCanvas:[{x:0,y:0},{x:720, y:0},{x:720, y:480},{x:0, y:480}] //граници области игры
+    pointsCanvas:[{x:0,y:0},{x:720, y:0},{x:720, y:480},{x:0, y:480}] //пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
 };
-var UUID = require('node-uuid'); //модуль для генерации ид комнат
+var UUID = require('node-uuid'); //пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 function Tank(x, y, r){
     this.width = 20;
-    this.height = 48;
-    this.margin = 1;  //велечина на которую будет увеличен контур танка для очистки
-    this.gun_height =  10;
+    this.height = 36;
+    this.margin = 1;  //пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+
+    this.gun_height =  31;
+    this.gun_width = 12;
+    this.gun_speed = 20;
+    this.gun_r = 0;
+
     this.gub_width = 3;
     this.x = x;
     this.y = y;
     this.r = r;
     this.speed = 13;
     this.rotate_speed = 17;
-    this.border = {}; //содержит точки для описания корпуса и пушки танка
+    this.border = {}; //пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
     this.border.body = new Intersect(Intersect.prototype.setPointsQuad.apply(this,
-        [this.x,this.y,this.width/2-0.1,(this.height-this.gun_height)/2-0.1,this.r]));
+        [this.x,this.y,this.width/2-0.1,this.height/2-0.1,this.r]));
     this.border.gun = new Intersect(Intersect.prototype.setPointsQuad.apply(this,
-        [this.x+((this.height-this.gun_height)/2)*Math.cos(this.r)+(this.gun_height/2)*Math.cos(this.r),
-        this.y+((this.height-this.gun_height)/2)*Math.sin(this.r)+(this.gun_height/2)*Math.sin(this.r),
-        this.gub_width/2-0.1,
-        this.gun_height/2-0.1,this.r]
+        [this.x+((this.gun_height -5)/2)*Math.cos(this.r+this.gun_r),
+            this.y+((this.gun_height -5)/2)*Math.sin(this.r+this.gun_r),
+            this.gub_width/2-0.1,
+            (this.gun_height -5)/2-0.1, this.r+this.gun_r]
     ));
+
     this.whenWasShot = new Date();
     this.timeShot = 1000;
     this.yourDeath = 0;
     this.life = 100;
     this.destroyed = 0;
-    this.damage = 20;
+    this.damageMin = 15;
+    this.damageMax = 25;
     this.sleep = false;
 }
 
-function Intersect(pt){ //pt масив который содержит точки
+function Intersect(pt){ //pt пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
     this.points = pt || [];
 }
 Intersect.prototype.setPointsQuad = function(centrX, centrY, h, w, r){
@@ -88,7 +95,7 @@ Intersect.prototype.intersect = function(pt2){
                 return true;
     return false;
 };
-Intersect.prototype.intersectSeg = function(t1, t2, t3, t4) { //пересекаються ли отрезки заданые точками
+Intersect.prototype.intersectSeg = function(t1, t2, t3, t4) { //пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
     intersect_1 = function(a, b, c, d){
         if (a>b){
             a^=b;
@@ -119,6 +126,17 @@ function Game(){
     this.maxPlayer = 4;
     this.staticObj = stObj;
     this.freeColor = [0, 1, 2, 3];
+    this.message = [];
+    this.whoDeleted = [];
+    this.whoWake = [];
+    this.posReset = [
+        {x:53, y:57},
+        {x:660, y:52},
+        {x:658, y:435},
+        {x:208, y:141},
+        {x:540, y:361},
+        {x:182, y:356},
+        {x:542, y:133}];
 }
 function Player(id, t, n, c){
     this.playerId = id;
@@ -131,46 +149,39 @@ function rand(min, max){
     rand = Math.round(rand);
     return rand;
 }
-
 sgame.startGame = function(game, socket, name){
     socket.join(game.roomId);
-    this.id[socket.id] = game.roomId; //ассоциативнный массив ид_клиента - комната_клиента
-    for(var tankCreat = new Tank(rand(0, 620)+ 50, rand(0, 380)+ 50, rand(0, 360));sgame.collision(tankCreat, game, socket.id);){
-        tankCreat = new Tank(rand(0, 620)+ 50, rand(0, 380)+ 50, rand(0, 360));
+    this.id[socket.id] = game.roomId; //пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ_пїЅпїЅпїЅпїЅпїЅпїЅпїЅ - пїЅпїЅпїЅпїЅпїЅпїЅпїЅ_пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+    for(var l= game.posReset[rand(0, game.posReset.length-1)], tankCreat = new Tank(l.x, l.y, rand(0, 360));
+        sgame.collision(tankCreat, game, socket.id, true);){
+        l= game.posReset[rand(0, game.posReset.length-1)];
+        tankCreat = new Tank(l.x, l.y, rand(0, 360));
     }
     var color=0;
     if (!game.freeColor.length)
         color = 0;
     else color = game.freeColor.pop();
 
-    socket.emit('massage', {str: 'You online', color: color});
-    socket.emit('id', socket.id);
-    socket.broadcast.to(game.roomId).emit('massage', {str: 'User connected', color: color});
-
     game.players[socket.id] = new Player(socket.id, tankCreat, name, color);
     //console.log('name: '+game.players[socket.id].name+' color: '+game.players[socket.id].color);
-
     //console.log('data about new player send');
+    var gg={};
+    gg[socket.id] = game.players[socket.id];
+    socket.broadcast.to(game.roomId).emit('newPlayer', {game: gg});
+    socket.emit('newPlayer', {id: socket.id, game: game.players});
 
-    socket.broadcast.to(game.roomId).emit('newPlayer',  game.players[socket.id]);
-
-    for (var player in game.players){
-        if(!game.players.hasOwnProperty(player)) continue;
-        socket.emit('newPlayer', game.players[player]);
-    }
-
-};
-sgame.massage = function(socket, data){
-    var col = this.games[socket.rooms[1]].players[socket.id].color;
-    this.io.to(socket.rooms[1]).emit('massage', {str: data, color: col});
 };
 sgame.DataForSend = function (theGame){
     var obj = {};
     for(var i in theGame.players) {
         if (!theGame.players.hasOwnProperty(i)) continue;
         var theTank = theGame.players[i].tank;
-        obj[i]={x: theTank.x, y:theTank.y, r: theTank.r };
+        obj[i]={x: theTank.x, y:theTank.y, r: theTank.r, r_gun: theTank.gun_r};
     }
+    obj.msg = theGame.message;
+    obj.del = theGame.whoDeleted;
+    obj.wake = theGame.whoWake;
+    obj.date = new Date().getTime();
     return obj;
 };
 sgame.createGame = function(socket, name) {
@@ -180,7 +191,10 @@ sgame.createGame = function(socket, name) {
     this.count++;
     this.startGame(crGame, socket, name);
     crGame.timerId = setInterval(function(theGame) {
-        this.io.to(theGame.roomId).emit('movePlayer', sgame.DataForSend(theGame));
+        this.io.to(theGame.roomId).emit('dataForUser', sgame.DataForSend(theGame));
+        theGame.message.length = 0;
+        theGame.whoDeleted.length = 0;
+        theGame.whoWake.length = 0;
     }.bind(this, crGame), 60);
     //console.log('interval start');
 };
@@ -199,9 +213,7 @@ sgame.endGame = function(socket){
         theGame.freeColor.push(color);
         delete theGame.players[socket.id];
         theGame.count--;
-        //console.log('player delete ' + theGame.count);
-        socket.broadcast.to(theRoom).emit('massage', {str: 'User disconnected', color: color});
-        this.io.to(theRoom).emit('deletePlayer', socket.id);
+        theGame.whoDeleted.push(socket.id);
     }
 };
 sgame.findGame = function(socket, name){
@@ -226,32 +238,31 @@ sgame.findGame = function(socket, name){
         this.createGame(socket, name);
     }
 };
-
-sgame.collision = function(theTank, theGame, socket){
+sgame.collision = function(theTank, theGame, socket, put){
     var colBody = new Intersect();
     colBody.setPointsQuad(
-        theTank.x,theTank.y,theTank.width/2-0.1,(theTank.height-theTank.gun_height)/2-0.1,theTank.r
+        theTank.x,theTank.y,theTank.width/2-0.1,theTank.height/2-0.1,theTank.r
     );
     if(colBody.intersect(this.pointsCanvas)) return true;
     var colGun = new Intersect();
     colGun.setPointsQuad(
-        theTank.x+((theTank.height-theTank.gun_height)/2)*Math.cos(theTank.r)+(theTank.gun_height/2)*Math.cos(theTank.r),
-        theTank.y+((theTank.height-theTank.gun_height)/2)*Math.sin(theTank.r)+(theTank.gun_height/2)*Math.sin(theTank.r),
+        theTank.x+((theTank.gun_height -5)/2)*Math.cos(theTank.r+theTank.gun_r),
+        theTank.y+((theTank.gun_height -5)/2)*Math.sin(theTank.r+theTank.gun_r),
         theTank.gub_width/2-0.1,
-        theTank.gun_height/2-0.1,theTank.r
+        (theTank.gun_height -5)/2-0.1 , theTank.r+theTank.gun_r
     );
-    //провверка на столкновеня с статическими объектами
-    var obj = theGame.staticObj;
-    for(var i=0; i<obj.length; i++){
-        if (colBody.intersect(obj[i])||colGun.intersect(obj[i])) return true;
+    if(put!==true) {
+        //пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+        var obj = theGame.staticObj;
+        for (var i = 0; i < obj.length; i++) {
+            if (colBody.intersect(obj[i]) || colGun.intersect(obj[i])) return true;
+        }
     }
-
     if(theGame.count <= 1){
         theTank.border.body = colBody;
         theTank.border.gun = colGun;
         return false;
     }
-
     for(var i in theGame.players) {
         if (!theGame.players.hasOwnProperty(i)) continue;
         if (socket == theGame.players[i].playerId || theGame.players[i].tank.sleep) continue;
@@ -269,8 +280,8 @@ sgame.collision = function(theTank, theGame, socket){
     return false;
 };
 sgame.shot = function(theTank, theGame, socket){
-    var px = theTank.x+((theTank.height-theTank.gun_height)/2)*Math.cos(theTank.r)+(theTank.gun_height)*Math.cos(theTank.r);
-    var py = theTank.y+((theTank.height-theTank.gun_height)/2)*Math.sin(theTank.r)+(theTank.gun_height)*Math.sin(theTank.r);
+    var px = theTank.x+((theTank.gun_height-5))*Math.cos(theTank.r+theTank.gun_r);
+    var py = theTank.y+((theTank.gun_height-5))*Math.sin(theTank.r+theTank.gun_r);
     var startShot = new Intersect([
         {
             x:px,
@@ -305,11 +316,10 @@ sgame.shot = function(theTank, theGame, socket){
     }
     var kill = false;
     var destroyed_1, death_1;
-
     var vicX=0, vicY=0;
     if (victimId !== false){
         var pl = theGame.players[victimId].tank;
-        var hp = pl.life-=theTank.damage;
+        var hp = pl.life-=rand(theTank.damageMin, theTank.damageMax);
         if(hp<=0){
             theTank.destroyed++;
             pl.yourDeath++;
@@ -318,48 +328,51 @@ sgame.shot = function(theTank, theGame, socket){
             pl.life=100;
             pl.sleep = true;
             this.io.to(theGame.roomId).emit('heKill', {id:victimId, x:pl.x, y:pl.y});
-            this.io.to(theGame.roomId).emit('massage', {str: 'User killed', color: theGame.players[socket].color});
             setTimeout(function(victimId) {
                 var p1 = theGame.players[victimId].tank;
                 pl.sleep = false;
-                for(var tankCreat = new Tank(rand(0, 620)+ 50, rand(0, 380)+ 50, rand(0, 360));sgame.collision(tankCreat, theGame, victimId);){
-                    tankCreat = new Tank(rand(0, 620)+ 50, rand(0, 380)+ 50, rand(0, 360));
+                for(var l= theGame.posReset[rand(0, theGame.posReset.length-1)], tankCreat = new Tank(l.x, l.y, rand(0, 360));
+                    sgame.collision(tankCreat, theGame, socket.id, true);){
+                    l= theGame.posReset[rand(0, theGame.posReset.length-1)];
+                    tankCreat = new Tank(l.x, l.y, rand(0, 360));
                 }
                 pl.x= tankCreat.x; pl.y= tankCreat.y; pl.r= tankCreat.r;
+                pl.gun_r = 0;
                 p1.border.body= tankCreat.border.body;
                 p1.border.gun= tankCreat.border.gun;
-                this.io.to(theGame.roomId).emit('endSleep', {id: victimId, x: p1.x, y: p1.y, r: p1.r});
+                theGame.whoWake.push(victimId);
             }.bind(this, victimId), 3000);
             kill=true;
         }
         vicX=pl.x;
         vicY=pl.y;
-
     }
-
-    this.io.to(theGame.roomId).emit('shot', {kill:kill, dest: destroyed_1, death:death_1, hit:min.x!=5000 && min.y!=5000 && !kill, id:socket,  x: min.x, y:min.y, vicX:vicX, vicY:vicY, gunX:px, gunY:py, gunR:theTank.r, lifeVictim:{id:victimId, hp:victimId===false?false:theGame.players[victimId].tank.life}});
+    this.io.to(theGame.roomId).emit('shot', {kill:kill, dest: destroyed_1, death:death_1, hit:min.x!=5000 && min.y!=5000 && !kill, id:socket,  x: min.x, y:min.y, vicX:vicX, vicY:vicY, gunX:px, gunY:py, tankR:theTank.r, gunR:theTank.gun_r, lifeVictim:{id:victimId, hp:victimId===false?false:theGame.players[victimId].tank.life}});
 };
-
-sgame.movePlayer = function(socket, data){
-
+sgame.processingDataUser = function(socket, data){
     var theGame = this.games[this.id[socket.id]];
     var theTank = theGame.players[socket.id].tank;
-
+    if(data.msg!==false) {
+        theGame.message.push({str: data.msg, color: theGame.players[socket.id].color});
+        //console.log('message: '+data.msg);
+    }
     if(theTank.sleep) return;
-    var x=theTank.x, y=theTank.y, r=theTank.r;
-
+    var x=theTank.x, y=theTank.y, r=theTank.r, gr=theTank.gun_r;
     if(data.space && ((theTank.whenWasShot-(new Date()))<-theTank.timeShot)) {
         theTank.whenWasShot = new Date();
         sgame.shot(theTank, theGame, socket.id);
     }
-
     var rotSp = theTank.rotate_speed/data.delTime;
     var sp = theTank.speed/data.delTime;
+    var gunRotSp = theTank.gun_speed/data.delTime;
+    if(data.gunLeft)
+        theTank.gun_r -= gunRotSp * Math.PI / 180;
+    else if (data.gunRight)
+        theTank.gun_r += gunRotSp * Math.PI / 180;
     if(data.left)
         theTank.r -= rotSp * Math.PI / 180;
     else if (data.right)
         theTank.r += rotSp * Math.PI / 180;
-
     if(data.up) {
         theTank.x += sp * Math.cos(theTank.r);
         theTank.y += sp * Math.sin(theTank.r);
@@ -371,9 +384,9 @@ sgame.movePlayer = function(socket, data){
         theTank.r = r;
         theTank.x = x;
         theTank.y = y;
+        theTank.gun_r = gr;
     }
 };
-
 sgame.checkPing = function(socket){
     socket.emit('checkPing');
 };

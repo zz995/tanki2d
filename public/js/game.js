@@ -1,10 +1,10 @@
 var game = {
-        countTankClear: 0,
         startAnimate: false,
         id: 0
     },
     images = {
         tank: new Image(),
+        gun: new Image(),
         imDes: new Image(),
         imShot: new Image(),
         imBtoom: [],
@@ -13,7 +13,7 @@ var game = {
     players = {},
     ctx, keys, info,
     lifeLine,
-    massageClient,
+    messageClient,
     socket = io();
 
 jQuery.fn.center = function (){
@@ -34,6 +34,7 @@ function init(){
         else alert('Not right login');
     });
 }
+
 function nextInit(){
         //console.log('next init start');
         $('#container').show();
@@ -44,8 +45,8 @@ function nextInit(){
                   .attr('height', 480);
         $('#chat').hide();
         $('#container').center();
-        massageClient = new Massage();
-        lifeLine = new LineLife(),
+        messageClient = new Message();
+        lifeLine = new LineLife();
         keys = new Keys();
         info = new Info();
         info.timeFPS = new Date().getTime();
@@ -53,6 +54,7 @@ function nextInit(){
         info.setPersonalInfo(0, ctx);
         setEventHandlers();
         images.tank.src = "image/tank.png";
+        images.gun.src = "image/gun.png";
         images.imShot.src = "image/shot.png";
         for(var i = 0; i<8; i++){
             var zz = new Image();
@@ -80,33 +82,14 @@ function setEventHandlers(){
 function setNextEvenHandlers(){
     $(window).bind('keydown', onKeydown);
     $(window).bind('keyup', onKeyup);
-    socket.on('id',function(a){game.id=a;});
-    socket.on('endSleep', onEndSleep);
-    socket.on('massage', onMassage);
     socket.on('newPlayer', onNewPlayer);
-    socket.on('movePlayer', onMovePlayer);
+    socket.on('dataForUser', onDataForUser);
     socket.on('shot', onShot);
-    socket.on('deletePlayer', onDeletePlayer);
     socket.on('checkPing', onCheckPing);
 }
 
 function onCheckPing(){
     info.ping = (new Date().getTime())-info.timeSend;
-}
-
-function onEndSleep(data){
-    var theTank = players[data.id].tank;
-    theTank.sleep = false;
-    theTank.x= data.x;
-    theTank.y= data.y;
-    theTank.r= data.r;
-    theTank.oldx = data.x;
-    theTank.oldy = data.y;
-    theTank.oldr = data.r;
-    theTank.endX = data.x;
-    theTank.endY = data.y;
-    theTank.endR = data.r;
-    if(data.id==game.id)lifeLine.hp = 100;
 }
 
 function onShot(data){
@@ -135,65 +118,100 @@ function onShot(data){
         vzruv.timeStartBtoom = new Date();
         vzruv.global = true;
         if(data.lifeVictim.id==game.id)lifeLine.hp = 0;
-        game.countTankClear++;
+        //game.countTankClear++;
         players[data.lifeVictim.id].tank.sleep = true;
+        message({str: 'User killed', color: info.dataForChange[data.id].color});
     }
     if(Math.sqrt((data.x-data.gunX)*(data.x-data.gunX)+(data.y-data.gunY)*(data.y-data.gunY))>=images.imShot.height/2) {
         var shot = players[data.id].st;
         shot.visible = true;
         shot.x = data.gunX;
         shot.y = data.gunY;
-        shot.r = data.gunR;
+        shot.r = data.tankR+data.gunR;
+        game.countShotClear++;
     }
 }
 
-function onMovePlayer(data){
+function onDataForUser(data){
+
     for(var i in data) {
-        if (!data.hasOwnProperty(i)) continue;
+        if (!data.hasOwnProperty(i)||i=='msg'||i=='del'||i=='wake'||i=='date') continue;
         var theTank = players[i].tank;
+        if(data.date > theTank.timeUpdate) theTank.timeUpdate = data.date;
+        else {
+            console.log('data is old');
+            continue;
+        }
         var dataTank = data[i];
         theTank.endX = dataTank.x;
         theTank.endY = dataTank.y;
         theTank.endR = dataTank.r;
+        theTank.endGun_r = dataTank.r_gun;
         theTank.timeUpdatePos = (new Date().getTime())-theTank.startTime;
         theTank.startTime = new Date().getTime();
         theTank.t = 0;
     }
+    data.msg.forEach(function(item){message(item);});
+    data.del.forEach(function(item){deletePlayer(item);});
+    data.wake.forEach(function(item){
+        var theTank = players[item].tank;
+        theTank.sleep = false;
+        theTank.x = data[item].x;
+        theTank.y = data[item].y;
+        theTank.r = data[item].r;
+        theTank.oldr_gun = data[item].r_gun;
+        if(item==game.id)lifeLine.hp = 100;
+    });
 }
-function onDeletePlayer(id){
+
+function deletePlayer(id){
     //console.log('delete player ' + id);
     players[id].tank.dead = true;
+    message({str: 'User disconnected', color: info.dataForChange[id].color});
     info.del(id);
 }
+
 function onNewPlayer(data){
     //console.log("New player connected "+data.playerId);
-    players[data.playerId] = {
-        tank: new TankObj(data.tank, info.listColor[data.color]),
-        bt: new Btoom(),
-        st: new Shot()
-    };
-    players[data.playerId].tank.timeUpdatePos = new Date().getTime();
-    info.add(data.playerId, data.name, data.tank.destroyed, data.tank.yourDeath, data.color);
-    if(data.playerId==game.id) info.color = info.listColor[data.color];
-    this.life = 100;
+    for(var i in data.game) {
+        if (!data.game.hasOwnProperty(i)) continue;
+        players[i] = {
+            tank: new TankObj(data.game[i].tank, info.listColor[data.game[i].color]),
+            bt: new Btoom(),
+            st: new Shot()
+        };
+        players[i].tank.timeUpdatePos = new Date().getTime();
+        info.add(i, data.game[i].name, data.game[i].tank.destroyed, data.game[i].tank.yourDeath, data.game[i].color);
+        message({str: 'User connected', color: data.game[i].color});
+    }
+    if(data.id != undefined) {
+        game.id = data.id;
+        info.color = info.listColor[data.game[data.id].color];
+        message({str: 'You online', color: data.game[data.id].color});
+    }
 }
+
 function onResize(){
     $('#container').center();
     $('#enter').center();
 }
+
 function onKeydown(e) {
     keys.onKeyDown(e);
 }
+
 function onKeyup(e) {
     keys.onKeyUp(e);
 }
-function onMassage(msg){
-    //console.log('massage: '+msg.str);
-    massageClient.color = info.listColor[msg.color];
-    massageClient.wrapText(ctx, msg.str);
-    massageClient.wrapClearText(ctx);
-    massageClient.drawMessage(ctx);
+
+function message(msg){
+    //console.log('message: '+msg.str);
+    messageClient.color = info.listColor[msg.color];
+    messageClient.wrapText(ctx, msg.str);
+    messageClient.wrapClearText(ctx);
+    messageClient.drawMessage(ctx);
 }
+
 function animate(){
     if(game.startAnimate){
         update();
@@ -201,12 +219,18 @@ function animate(){
     }
     window.requestAnimationFrame(animate);
 }
+
 function update(){
-    socket.emit("movePlayer", {up: keys.up, down: keys.down, left: keys.left, right: keys.right, space: keys.space, delTime:info.deltaTime});
-    if(!keys.enterPressOne&&!/^\s*$/.test(keys.data)){
-        socket.emit('massage', keys.data);
-        keys.data='';
-    }
+    var checkEnterData = !keys.enterPressOne&&!/^\s*$/.test(keys.data);
+    socket.emit("dataUser", {
+        up: keys.up, down: keys.down,
+        left: keys.left, right: keys.right,
+        gunLeft: keys.gunLeft, gunRight: keys.gunRight,
+        space: keys.space, delTime:info.deltaTime,
+        msg: checkEnterData?keys.data:false
+    });
+    if(checkEnterData) keys.data='';
+
     for(var i in players) {
         if (!players.hasOwnProperty(i)) continue;
         var theTank = players[i].tank;
@@ -215,6 +239,7 @@ function update(){
             theTank.x += (theTank.endX-theTank.x)*theTank.t;
             theTank.y += (theTank.endY-theTank.y)*theTank.t;
             theTank.r += (theTank.endR-theTank.r)*theTank.t;
+            theTank.gun_r += (theTank.endGun_r-theTank.gun_r)*theTank.t;
         }
         theTank.t += (1/(theTank.timeUpdatePos/info.deltaTime));
     }
@@ -225,33 +250,29 @@ function draw(){
     info.timeFPS = new Date().getTime();
     info.clearFP(ctx);
     info.clearPersonaInfo(ctx);
-    if(game.countTankClear>1){
-        ctx.clearRect(0, 0, 720, 480);
-        game.countTankClear=0;
-    }
     if(info.needClear) info.clear(ctx);
-    massageClient.wrapClearText(ctx);
+    messageClient.wrapClearText(ctx);
     lifeLine.clear();
     for(var player in players){
         if(!players.hasOwnProperty(player)) continue;
         players[player].tank.clear(ctx);
-        players[player].tank.redraw(ctx, images.tank);
+        players[player].tank.redraw(ctx, images.tank, images.gun);
         if (players[player].tank.dead)  players[player].st.needClear = true;
     }
     for(var player in players){
         if(!players.hasOwnProperty(player)) continue;
         players[player].st.clear(ctx, images.imShot);
+        if (players[player].tank.dead){
+            delete players[player];
+            continue;
+        }
         players[player].st.shot(ctx, images.imShot);
     }
     for(var player in players){
         if(!players.hasOwnProperty(player)) continue;
         players[player].bt.btoom(ctx, players[player].bt.global?images.imGlobalBtoom:images.imBtoom);
     }
-    for(var player in players){
-        if(!players.hasOwnProperty(player)) continue;
-        if (players[player].tank.dead) delete players[player];
-    }
-    massageClient.drawMessage(ctx);
+    messageClient.drawMessage(ctx);
     lifeLine.drawHp();
     if(keys.shift)info.draw(ctx);
     info.drawPersonaInfo(ctx, images.imDes);

@@ -7,7 +7,7 @@ function Info(){
     this.h = 0;
     this.lineH = 19;
     this.title = 'Information';
-    this.listColor = ['#4968CB', '#CDD402', 'green', 'red'];
+    this.listColor = ['#6396B3', '#CDD402', '#0EF562', 'red'];
     this.data = [];
     this.dataForChange = {};
     this.needClear = false;
@@ -23,6 +23,7 @@ function Info(){
     this.timeFPS = 0;
     this.deltaTime = 0;
 }
+
 Info.prototype.add = function(id, namePlayer, dest, dead, numberColor){
     if(this.dataForChange[id]!=undefined)return;
     this.data.push({
@@ -35,11 +36,13 @@ Info.prototype.add = function(id, namePlayer, dest, dead, numberColor){
     this.dataForChange[id]=this.data[this.data.length-1];
     this.sort();
 };
+
 Info.prototype.change = function(idDest, dest, idDead, dead){
     this.dataForChange[idDest].destroyed = dest;
     this.dataForChange[idDead].death = dead;
     this.sort();
 };
+
 Info.prototype.sort = function(){
     for(var i= 0; i<this.data.length-1; i++)
         for(var j= 0; j<this.data.length-i-1; j++)
@@ -56,6 +59,7 @@ Info.prototype.sort = function(){
                 }
             }
 };
+
 Info.prototype.del = function(id){
     this.dataForChange[id].exist=false;
     for(var i= 0, j= 0; i<this.data.length; i++){
@@ -64,6 +68,7 @@ Info.prototype.del = function(id){
     this.data.length = j;
     delete this.dataForChange[id];
 };
+
 Info.prototype.clear = function(ctx){
     ctx.save();
     ctx.translate(this.x, this.y);
@@ -71,6 +76,7 @@ Info.prototype.clear = function(ctx){
     ctx.restore();
     this.needClear = false;
 };
+
 Info.prototype.draw = function(ctx){
     this.needClear = true;
     this.h= (this.data.length+2)*this.lineH;
@@ -127,11 +133,13 @@ Info.prototype.draw = function(ctx){
     }
     ctx.restore();
 };
+
 Info.prototype.setPersonalInfo = function(dest, ctx){
     this.destroyed = dest.toString();
     ctx.save();
     ctx.font = 'bold '+this.forPerInfFontSize.toString()+'pt Calibri';
     this.stPerWhith = ctx.measureText(dest).width;
+    //console.log('width text: '+this.stPerWhith);
     ctx.restore();
 };
 

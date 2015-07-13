@@ -25,24 +25,23 @@ function onSocketConnection(socket) {
     socket.on('newPlayer', onNewPlayer);
 }
 
-function onMovePlayer(keys){
-    games.movePlayer(this, keys);
+function onProcessingDataUser(keys){
+    games.processingDataUser(this, keys);
 }
 
 function onNewPlayer(name){
     var soc = this;
     //console.log('a new user '+soc.id+ ' name: '+name);
+
     if(/^[a-zA-Z0-9]{3,10}$/.test(name)&&name!==undefined) {
         //console.log('user created '+soc.id);
         io.to(soc.id).emit('loginTrue');
 
         games.findGame(soc, name);
 
-        soc.on('movePlayer', onMovePlayer);
+        soc.on('dataUser', onProcessingDataUser);
 
         soc.on('checkPing', onCheckPing);
-
-        soc.on('massage', onMassage);
 
         soc.on('disconnect', onClientDisconnect);
     }
@@ -50,10 +49,6 @@ function onNewPlayer(name){
 
 function onCheckPing(){
     games.checkPing(this);
-}
-
-function onMassage(msg){
-    games.massage(this, msg);
 }
 
 function onClientDisconnect(){

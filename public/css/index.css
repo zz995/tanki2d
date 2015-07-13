@@ -31,7 +31,7 @@ canvas {
     background: url(../image/foneForEnter.png) no-repeat center center fixed;
     background-size: cover;
     width: 400px;
-    height: 220px;
+    height: 239px;
     border-radius: 4px;
     position: absolute;
 }
@@ -72,5 +72,6 @@ canvas {
     font-size: 25pt;
 }
 .help{
+    margin: 5px 0px 0px 0px;
     text-align: center;
 }
